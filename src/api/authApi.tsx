@@ -1,0 +1,211 @@
+import axiosClient from "./axiosClient";
+import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
+import type { AxiosError } from "axios";
+
+const TOKEN_KEY = "token";
+const USER_INFO_KEY = "userInfo";
+
+// =========================
+// Kiểu dữ liệu (có thể chỉnh theo backend thật)
+// =========================
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  [key: string]: any;
+}
+
+type LoginResponseData = string; // token string bên trong field data
+type RegisterPayload = {
+  phoneNumber: string;
+  password: string;
+  passwordConfirm: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  dateOfBirth: string;
+  address: string;
+};
+
+type UpdateProfilePayload = {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  address?: string;
+};
+
+type UserInfo = Record<string, any>; // có thể define chi tiết hơn
+
+// =========================
+// ✅ LOGIN
+// =========================
+export const loginUser = async (
+  phoneNumber: string,
+  password: string
+): Promise<
+  | { success: true; token: string; user: UserInfo }
+  | { success: false; message: string }
+> => {
+  try {
+    // response: AxiosResponse<ApiResponse<string>>
+    const response = await axiosClient.post<ApiResponse<LoginResponseData>>(
+      "/auth/login",
+      { phoneNumber, password },
+      {
+        skipAuth: true, // login không cần Bearer token
+      }
+    );
+
+    console.log("Login response:", response);
+
+    // ✅ token là string: response.data (ApiResponse<string>) -> .data (string)
+    const token = response.data.data;
+
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+
+      // decode lấy thông tin user
+      const userInfo = jwtDecode<UserInfo>(token);
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+
+      toast.success("Login successful!");
+      return { success: true, token, user: userInfo };
+    }
+
+    toast.error("No token received.");
+    return { success: false, message: "No token received." };
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("ERROR RESPONSE", error.response);
+    const msg = (error.response?.data as any)?.message || "Login failed!";
+    toast.error(msg);
+    return { success: false, message: msg };
+  }
+};
+
+// =========================
+// ✅ REGISTER
+// =========================
+export const registerUser = async (
+  payload: RegisterPayload
+): Promise<{ success: boolean; data?: any; message?: string }> => {
+  try {
+    const response = await axiosClient.post<ApiResponse<any>>(
+      "/auth/register",
+      payload,
+      {
+        skipAuth: true,
+      }
+    );
+
+    toast.success("Register successful!");
+    // response.data: ApiResponse<any>, tuỳ bạn cần lấy gì
+    return { success: true, data: response.data };
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("REGISTER ERROR", error.response);
+    const msg = (error.response?.data as any)?.message || "Register failed!";
+    toast.error(msg);
+    return { success: false, message: msg };
+  }
+};
+
+// =========================
+// ✅ GET ME
+// =========================
+export const fetchMe = async (): Promise<any> => {
+  try {
+    const response = await axiosClient.get<ApiResponse<any>>("/auth/me");
+    // response.data: ApiResponse<any>
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("FETCH ME ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to get profile!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+// =========================
+// ✅ UPDATE ME
+// =========================
+export const updateProfile = async (
+  payload: UpdateProfilePayload
+): Promise<any> => {
+  try {
+    const response = await axiosClient.patch<ApiResponse<any>>(
+      "/auth/me",
+      payload
+    );
+    toast.success("Profile updated successfully!");
+
+    if (response.data) {
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(response.data));
+    }
+
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("UPDATE PROFILE ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to update profile!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+// =========================
+// ✅ LOGOUT
+// =========================
+export const logout = async (refreshToken?: string): Promise<void> => {
+  try {
+    if (refreshToken) {
+      await axiosClient.post("/auth/logout", null, {
+        params: { refreshToken },
+      });
+    }
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("LOGOUT ERROR", error.response);
+  } finally {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_INFO_KEY);
+    toast.info("Logged out!");
+  }
+};
+
+// =========================
+// ✅ Helpers
+// =========================
+export const getUserInfo = (): UserInfo | null => {
+  const raw = localStorage.getItem(USER_INFO_KEY);
+  return raw ? JSON.parse(raw) : null;
+};
+
+export const isAuthenticated = (): boolean => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return !!token;
+};
+
+export const refreshUserInfo = (): UserInfo | null => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    try {
+      const decoded = jwtDecode<UserInfo>(token);
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(decoded));
+      return decoded;
+    } catch (error) {
+      console.error("Invalid token:", error);
+      void logout();
+      return null;
+    }
+  }
+  return null;
+};
+
+export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);

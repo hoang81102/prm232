@@ -1,21 +1,35 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+// chỉnh lại path cho đúng với project của bạn
+import { loginUser } from "../api/authApi.js";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>("user@carrental.com");
-  const [password, setPassword] = useState<string>("rentcar123");
+  const [phoneNumber, setPhoneNumber] = useState<string>(""); // ✅ dùng phoneNumber
+  const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setLoading(true);
 
-    // ✅ Giả lập đăng nhập thành công
-    if (email === "user@carrental.com" && password === "rentcar123") {
-      alert("Đăng nhập thành công!");
-      navigate("/"); // 👉 Điều hướng về trang HomePage
-    } else {
-      alert("Sai email hoặc mật khẩu!");
+    try {
+      // ✅ Gọi đúng API: body { phoneNumber, password }
+      const result = await loginUser(phoneNumber, password);
+
+      if (result?.success) {
+        // loginUser đã toast thành công rồi, ở đây chỉ điều hướng
+        navigate("/");
+      } else {
+        // nếu loginUser trả về success = false
+        alert(result?.message || "Đăng nhập thất bại!");
+      }
+    } catch (err) {
+      // phòng trường hợp lỗi bất ngờ
+      alert("Có lỗi xảy ra, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,15 +51,16 @@ const Login: React.FC = () => {
 
         {/* Form đăng nhập */}
         <form onSubmit={handleLogin} className="text-left">
+          {/* ✅ ĐỔI TỪ EMAIL → SỐ ĐIỆN THOẠI */}
           <div className="mb-5">
             <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-              Email
+              Số điện thoại
             </label>
             <input
-              type="email"
-              placeholder="Nhập email của bạn"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="tel"
+              placeholder="Nhập số điện thoại"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
               required
             />
@@ -76,9 +91,10 @@ const Login: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#F96E2A] text-white p-4 rounded-xl text-base font-semibold cursor-pointer shadow-lg shadow-[#F96E2A]/40 transition-all duration-300 hover:bg-[#e55a1f] hover:-translate-y-1 mb-5"
+            disabled={loading}
+            className="w-full bg-[#F96E2A] text-white p-4 rounded-xl text-base font-semibold cursor-pointer shadow-lg shadow-[#F96E2A]/40 transition-all duration-300 hover:bg-[#e55a1f] hover:-translate-y-1 mb-5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Đăng nhập
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
