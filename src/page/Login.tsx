@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // chỉnh lại path cho đúng với project của bạn
-import { loginUser } from "../api/authApi.js";
+import { loginUser } from "../api/authApi";
 
 const Login: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>(""); // ✅ dùng phoneNumber
@@ -19,8 +19,19 @@ const Login: React.FC = () => {
       const result = await loginUser(phoneNumber, password);
 
       if (result?.success) {
-        // loginUser đã toast thành công rồi, ở đây chỉ điều hướng
-        navigate("/");
+        const role = result.user.role; // "Admin" | "Staff" | "CoOwner"
+
+        // 🔀 Điều hướng theo role
+        if (role === "Admin") {
+          navigate("/admin");
+        } else if (role === "Staff") {
+          navigate("/staff");
+        } else if (role === "CoOwner") {
+          navigate("/coowner");
+        } else {
+          // fallback nếu role lạ
+          navigate("/");
+        }
       } else {
         // nếu loginUser trả về success = false
         alert(result?.message || "Đăng nhập thất bại!");

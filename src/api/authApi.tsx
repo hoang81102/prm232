@@ -7,7 +7,7 @@ const TOKEN_KEY = "token";
 const USER_INFO_KEY = "userInfo";
 
 // =========================
-// Kiểu dữ liệu (có thể chỉnh theo backend thật)
+// Kiểu dữ liệu
 // =========================
 interface ApiResponse<T> {
   data: T;
@@ -15,7 +15,8 @@ interface ApiResponse<T> {
   [key: string]: any;
 }
 
-type LoginResponseData = string; // token string bên trong field data
+type LoginResponseData = string; // token string bên trong data
+
 type RegisterPayload = {
   phoneNumber: string;
   password: string;
@@ -37,7 +38,12 @@ type UpdateProfilePayload = {
   address?: string;
 };
 
-type UserInfo = Record<string, any>; // có thể define chi tiết hơn
+type Role = "Admin" | "Staff" | "CoOwner";
+
+export interface UserInfo {
+  role: Role;
+  [key: string]: any;
+}
 
 // =========================
 // ✅ LOGIN
@@ -50,25 +56,23 @@ export const loginUser = async (
   | { success: false; message: string }
 > => {
   try {
-    // response: AxiosResponse<ApiResponse<string>>
-    const response = await axiosClient.post<ApiResponse<LoginResponseData>>(
-      "/auth/login",
-      { phoneNumber, password },
-      {
-        skipAuth: true, // login không cần Bearer token
-      }
-    );
+    // Chú ý 2 generic: <T, R>
+    // T: payload gửi lên server
+    // R: kiểu dữ liệu sau khi axiosClient trả về (đã qua interceptor)
+    const response = await axiosClient.post<
+      ApiResponse<LoginResponseData>, // T: server trả về { data: token }
+      ApiResponse<LoginResponseData> // R: sau interceptor ta vẫn nhận ApiResponse<LoginResponseData>
+    >("/auth/login", { phoneNumber, password }, { skipAuth: true });
 
-    console.log("Login response:", response);
+    console.log("Login raw response:", response);
 
-    // ✅ token là string: response.data (ApiResponse<string>) -> .data (string)
-    const token = response.data.data;
+    // response: ApiResponse<LoginResponseData>
+    const token = response.data; // string
 
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
 
-      // decode lấy thông tin user
-      const userInfo = jwtDecode<UserInfo>(token);
+      const userInfo = jwtDecode<UserInfo>(token); // token là string → OK
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
 
       toast.success("Login successful!");
@@ -93,16 +97,14 @@ export const registerUser = async (
   payload: RegisterPayload
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
-    const response = await axiosClient.post<ApiResponse<any>>(
+    const response = await axiosClient.post<ApiResponse<any>, ApiResponse<any>>(
       "/auth/register",
       payload,
-      {
-        skipAuth: true,
-      }
+      { skipAuth: true }
     );
 
+    // response: ApiResponse<any>
     toast.success("Register successful!");
-    // response.data: ApiResponse<any>, tuỳ bạn cần lấy gì
     return { success: true, data: response.data };
   } catch (err) {
     const error = err as AxiosError<any>;
@@ -118,8 +120,9 @@ export const registerUser = async (
 // =========================
 export const fetchMe = async (): Promise<any> => {
   try {
-    const response = await axiosClient.get<ApiResponse<any>>("/auth/me");
-    // response.data: ApiResponse<any>
+    const response = await axiosClient.get<ApiResponse<any>, ApiResponse<any>>(
+      "/auth/me"
+    );
     return response.data;
   } catch (err) {
     const error = err as AxiosError<any>;
@@ -138,10 +141,11 @@ export const updateProfile = async (
   payload: UpdateProfilePayload
 ): Promise<any> => {
   try {
-    const response = await axiosClient.patch<ApiResponse<any>>(
-      "/auth/me",
-      payload
-    );
+    const response = await axiosClient.patch<
+      ApiResponse<any>,
+      ApiResponse<any>
+    >("/auth/me", payload);
+
     toast.success("Profile updated successfully!");
 
     if (response.data) {
@@ -184,7 +188,7 @@ export const logout = async (refreshToken?: string): Promise<void> => {
 // =========================
 export const getUserInfo = (): UserInfo | null => {
   const raw = localStorage.getItem(USER_INFO_KEY);
-  return raw ? JSON.parse(raw) : null;
+  return raw ? (JSON.parse(raw) as UserInfo) : null;
 };
 
 export const isAuthenticated = (): boolean => {
