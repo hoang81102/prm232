@@ -1,34 +1,75 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../api/authApi";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
 
-  // State quản lý form
-  const [name, setName] = useState<string>("");
+  // State quản lý form (đúng theo payload backend)
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>(""); // tên
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [gender, setGender] = useState<string>("Male");
+  const [dateOfBirth, setDateOfBirth] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
 
-  // Hàm xử lý đăng ký
-  const handleRegister = (event: React.FormEvent<HTMLFormElement>) => {
+  const [password, setPassword] = useState<string>("");
+  const [passwordConfirm, setPasswordConfirm] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleRegister = async (
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     event.preventDefault();
 
-    // ✅ Kiểm tra dữ liệu
-    if (!name || !email || !password || !confirmPassword) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+    // ✅ Kiểm tra dữ liệu cơ bản
+    if (
+      !firstName ||
+      !lastName ||
+      !phoneNumber ||
+      !email ||
+      !password ||
+      !passwordConfirm
+    ) {
+      alert("Vui lòng nhập đầy đủ các thông tin bắt buộc!");
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (password !== passwordConfirm) {
       alert("Mật khẩu xác nhận không khớp!");
       return;
     }
 
-    // ✅ Giả lập đăng ký thành công
-    alert("Đăng ký thành công! Vui lòng đăng nhập.");
-    navigate("/login"); // 👉 Điều hướng về trang đăng nhập
+    const payload = {
+      phoneNumber,
+      password,
+      passwordConfirm,
+      email,
+      firstName,
+      lastName,
+      gender,
+      dateOfBirth,
+      address,
+    };
+
+    try {
+      setLoading(true);
+      const result = await registerUser(payload);
+
+      if (result.success) {
+        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        navigate("/login");
+      } else {
+        alert(result.message || "Đăng ký thất bại!");
+      }
+    } catch (error) {
+      console.error("REGISTER ERROR:", error);
+      alert("Có lỗi xảy ra, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,23 +90,55 @@ const Register: React.FC = () => {
 
         {/* Form đăng ký */}
         <form onSubmit={handleRegister} className="text-left">
+          {/* Họ + Tên */}
+          <div className="mb-5 grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#2C5364] text-sm font-semibold mb-2">
+                Họ <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="VD: Nguyễn"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[#2C5364] text-sm font-semibold mb-2">
+                Tên <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="VD: Văn A"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Số điện thoại */}
           <div className="mb-5">
             <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-              Họ và tên
+              Số điện thoại <span className="text-red-500">*</span>
             </label>
             <input
-              type="text"
-              placeholder="Nhập họ và tên"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              type="tel"
+              placeholder="Nhập số điện thoại"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
               required
             />
           </div>
 
+          {/* Email */}
           <div className="mb-5">
             <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-              Email
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -77,9 +150,53 @@ const Register: React.FC = () => {
             />
           </div>
 
+          {/* Giới tính + Ngày sinh */}
+          <div className="mb-5 grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[#2C5364] text-sm font-semibold mb-2">
+                Giới tính
+              </label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
+              >
+                <option value="Male">Nam</option>
+                <option value="Female">Nữ</option>
+                <option value="Other">Khác</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[#2C5364] text-sm font-semibold mb-2">
+                Ngày sinh
+              </label>
+              <input
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
+              />
+            </div>
+          </div>
+
+          {/* Địa chỉ */}
           <div className="mb-5">
             <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-              Mật khẩu
+              Địa chỉ
+            </label>
+            <input
+              type="text"
+              placeholder="Nhập địa chỉ"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
+            />
+          </div>
+
+          {/* Mật khẩu */}
+          <div className="mb-5">
+            <label className="block text-[#2C5364] text-sm font-semibold mb-2">
+              Mật khẩu <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -100,15 +217,16 @@ const Register: React.FC = () => {
             </div>
           </div>
 
+          {/* Xác nhận mật khẩu */}
           <div className="mb-5">
             <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-              Xác nhận mật khẩu
+              Xác nhận mật khẩu <span className="text-red-500">*</span>
             </label>
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Nhập lại mật khẩu"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
               className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
               required
             />
@@ -116,9 +234,10 @@ const Register: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#F96E2A] text-white p-4 rounded-xl text-base font-semibold cursor-pointer shadow-lg shadow-[#F96E2A]/40 transition-all duration-300 hover:bg-[#e55a1f] hover:-translate-y-1 mb-5"
+            disabled={loading}
+            className="w-full bg-[#F96E2A] text-white p-4 rounded-xl text-base font-semibold cursor-pointer shadow-lg shadow-[#F96E2A]/40 transition-all duration-300 hover:bg-[#e55a1f] hover:-translate-y-1 mb-5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Đăng ký
+            {loading ? "Đang đăng ký..." : "Đăng ký"}
           </button>
         </form>
 

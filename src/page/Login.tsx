@@ -27,7 +27,7 @@ const Login: React.FC = () => {
         } else if (role === "Staff") {
           navigate("/staff");
         } else if (role === "CoOwner") {
-          navigate("/coowner");
+          navigate("/CoOwner/dashboard");
         } else {
           // fallback nếu role lạ
           navigate("/");

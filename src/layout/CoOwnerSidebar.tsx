@@ -28,21 +28,21 @@ const UserSidebar: React.FC = () => {
       id: "dashboard",
       title: "Dashboard",
       icon: "🏠",
-      path: "/user/dashboard",
+      path: "/CoOwner/dashboard",
       hasDropdown: false,
     },
     {
       id: "schedules",
       title: "My Schedules",
       icon: "📄",
-      path: "/user/Schedules",
+      path: "/CoOwner/Schedules",
       hasDropdown: false,
     },
     {
       id: "orders",
       title: "My Orders",
       icon: "🛒",
-      path: "/user/orders",
+      path: "/CoOwner/orders",
       hasDropdown: true,
       subItems: [
         { title: "All Orders", path: "/user/orders" },
@@ -55,7 +55,7 @@ const UserSidebar: React.FC = () => {
       id: "profile",
       title: "Profile",
       icon: "👤",
-      path: "/user/profile",
+      path: "/CoOwner/profile",
       hasDropdown: false,
     },
   ];

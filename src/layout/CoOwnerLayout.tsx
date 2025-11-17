@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import UserSidebar from "./UserSidebar";
+import UserSidebar from "./CoOwnerSidebar";
 
 const UserLayout: React.FC = () => {
   return (

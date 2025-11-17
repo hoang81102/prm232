@@ -17,12 +17,12 @@ import GroupManagement from "./components/Admin/GroupManagement";
 import GroupDetails from "./components/Admin/GroupDetails";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 
-import UserLayout from "./layout/UserLayout";
+import UserLayout from "./layout/CoOwnerLayout";
 import AdminLayout from "./layout/AdminLayout";
 
-import WeeklySchedule from "./components/User/WeeklySchedule";
-import UserProfile from "./components/User/UserProfile";
-import UserDashboard from "./components/User/UserDashboard";
+import WeeklySchedule from "./components/CoOwner/WeeklySchedule";
+import UserProfile from "./components/CoOwner/CoOwnerProfile";
+import UserDashboard from "./components/CoOwner/CoOwnerDashboard";
 
 import ChangePassword from "./page/ChangePassword";
 
@@ -58,7 +58,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
         </Route>
 
-        {/* User Routes in UserLayout */}
+        {/* CoOwner Routes in UserLayout */}
         <Route
           path="/CoOwner"
           element={
