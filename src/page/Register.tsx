@@ -24,14 +24,15 @@ const Register: React.FC = () => {
   ): Promise<void> => {
     event.preventDefault();
 
-    // ✅ Kiểm tra dữ liệu cơ bản
+    // ✅ Kiểm tra dữ liệu cơ bản (theo schema backend)
     if (
       !firstName ||
       !lastName ||
       !phoneNumber ||
       !email ||
       !password ||
-      !passwordConfirm
+      !passwordConfirm ||
+      !dateOfBirth // ⬅️ thêm ngày sinh để khớp schema
     ) {
       alert("Vui lòng nhập đầy đủ các thông tin bắt buộc!");
       return;
@@ -50,7 +51,7 @@ const Register: React.FC = () => {
       firstName,
       lastName,
       gender,
-      dateOfBirth,
+      dateOfBirth, // input type="date" sẽ gửi format yyyy-MM-dd
       address,
     };
 
@@ -168,13 +169,14 @@ const Register: React.FC = () => {
             </div>
             <div>
               <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-                Ngày sinh
+                Ngày sinh <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
                 className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
+                required
               />
             </div>
           </div>
