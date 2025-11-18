@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import type { ReactNode } from "react";
+import { Car, FileText, Group, HomeIcon, Menu, Settings, User, UsersRound, X, type Home } from "lucide-react";
+import { FaMoneyBill } from "react-icons/fa";
+import { Button } from "../components/ui/button";
 
 type MenuSubItem = {
   title: string;
@@ -27,45 +30,46 @@ const AdminSideBar: React.FC = () => {
     {
       id: "dashboard",
       title: "Admin Dashboard",
-      icon: "📦",
+      icon: <HomeIcon />,
       path: "/admin/dashboard",
       hasDropdown: false,
     },
     {
       id: "users",
-      title: "User Management",
-      icon: "👥",
+      title: "Quản lí tài khoản",
+      icon: <User />,
       path: "/admin/usermanagement",
       hasDropdown: false,
     },
     {
       id: "groups",
-      title: "Groups Management",
-      icon: "📦",
+      title: "Quản lí nhóm",
+      icon: <UsersRound />,
       path: "/admin/groups",
       hasDropdown: false,
     },
     {
-      id: "products",
-      title: "Applications Management",
-      icon: "📦",
-      path: "/admin/applications",
+      id: "vehicles",
+      title: "Quản lí xe",
+      icon: <Car />,
+      path: "/admin/vehicles",
       hasDropdown: false,
     },
-
     {
-      id: "orders",
-      title: "Order Management",
-      icon: "🛒",
-      path: "/admin/orders",
-      hasDropdown: true,
-      subItems: [
-        { title: "New Orders", path: "/admin/orders/new" },
-        { title: "Processing", path: "/admin/orders/delivered" },
-        { title: "Completed", path: "/admin/orders/shipped" },
-        { title: "Cancelled", path: "/admin/orders/cancelled" },
-      ],
+      id: "contracts",
+      title: "Quản lí hợp đồng",
+      icon: <FileText />,
+      path: "/admin/contracts",
+      hasDropdown: false,
     },
+ {
+      id: "finances",
+      title: "Quản lí tài chính",
+      icon: <FaMoneyBill />,
+      path: "/admin/contracts",
+      hasDropdown: false,
+    },
+   
   ];
 
   const handleDropdownToggle = (itemId: string) => {
@@ -89,7 +93,7 @@ const AdminSideBar: React.FC = () => {
 
   return (
     <div
-      className={`bg-[#FBF8EF] h-screen shadow-2xl transition-all duration-300 ${
+      className={`bg-[rgb(255,255,255)] h-screen shadow-2xl transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-72"
       } flex flex-col`}
     >
@@ -98,11 +102,11 @@ const AdminSideBar: React.FC = () => {
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-[#78B3CE] rounded-full flex items-center justify-center text-white font-bold">
-                A
+              <div className="w-10 h-10 bg-emerald-400 rounded-full flex items-center justify-center text-white font-bold">
+                <Car />
               </div>
               <div>
-                <h2 className="text-[#78B3CE] font-bold text-lg">
+                <h2 className="text-emerald-400 font-bold text-lg">
                   Admin Portal
                 </h2>
                 <p className="text-gray-500 text-xs">Management System</p>
@@ -111,9 +115,13 @@ const AdminSideBar: React.FC = () => {
           )}
           <button
             onClick={() => setIsCollapsed((v) => !v)}
-            className="p-2 rounded-lg bg-[#C9E6F0] text-[#78B3CE] hover:bg-[#78B3CE] hover:text-white transition-colors duration-200"
+            className="shrink-0"
           >
-            {isCollapsed ? "→" : "←"}
+            {!isCollapsed ? (
+              <X className="w-5 h-5 hover:bg-emerald-300 rounded-sm " />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
@@ -154,8 +162,8 @@ const AdminSideBar: React.FC = () => {
                     to={item.path}
                     className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ${
                       isActiveRoute(item.path)
-                        ? "bg-[#F96E2A] text-white shadow-lg"
-                        : "text-[#78B3CE] hover:bg-[#C9E6F0]"
+                        ? "bg-emerald-300 text-white shadow-lg"
+                        : "text-black hover:bg-emerald-200"
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
@@ -194,18 +202,19 @@ const AdminSideBar: React.FC = () => {
       </nav>
 
       {/* Footer - Logout */}
-      <div className="p-4 border-t border-[#C9E6F0] flex justify-center">
-        <button
-          onClick={handleLogout}
-          className={`flex items-center justify-center p-3 bg-red-400 hover:bg-red-500 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg ${
-            isCollapsed ? "w-12 h-12" : "space-x-2 px-6"
-          }`}
-          title="Logout"
-        >
-          <span className="text-lg">🚪</span>
-          {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
-        </button>
-      </div>
+    
+      <div className="p-4 border-t border-borde">
+          <Button
+            variant="outline"
+            className="w-full gap-2 hover:bg-emerald-300"
+            onClick={handleLogout}
+          >
+            <Settings className="w-4 h-4" />
+            {!isCollapsed && (
+              <span className="text-sm font-medium">Logout</span>
+            )}
+          </Button>
+        </div>
     </div>
   );
 };

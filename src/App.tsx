@@ -28,6 +28,7 @@ import ChangePassword from "./page/ChangePassword";
 
 // 👇 import ProtectedRoute
 import ProtectedRoute from "./Routes/ProtectedRoute";
+import AdminVehicles from "./components/Admin/VehicleManagement";
 
 function App() {
   return (
@@ -44,9 +45,10 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRoles={["Admin"]}>
-              <AdminLayout />
-            </ProtectedRoute>
+            // <ProtectedRoute allowedRoles={["Admin"]}>
+            //   <AdminLayout />
+            // </ProtectedRoute>
+            <AdminLayout />
           }
         >
           {/* các path con KHÔNG cần /admin ở trước */}
@@ -54,7 +56,7 @@ function App() {
           <Route path="usermanagement/:id" element={<UserDetails />} />
           <Route path="groups" element={<GroupManagement />} />
           <Route path="groups/:id" element={<GroupDetails />} />
-          <Route path="applications" element={<ApplicationFormManagement />} />
+          <Route path="vehicles" element={<AdminVehicles />} />
           <Route path="dashboard" element={<AdminDashboard />} />
         </Route>
 
