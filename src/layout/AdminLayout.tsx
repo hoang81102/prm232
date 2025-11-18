@@ -8,7 +8,7 @@ const AdminLayout: React.FC = () => {
 
       {/* Main content area */}
       <div className="flex-1 overflow-hidden">
-        <main className="h-full overflow-y-auto bg-gray-50 p-6">
+        <main className="h-full overflow-y-auto bg-white p-6">
           <Outlet />
         </main>
       </div>

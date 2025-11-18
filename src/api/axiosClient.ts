@@ -9,15 +9,12 @@ declare module "axios" {
   }
 }
 
-
 const axiosClient = axios.create({
-  baseURL: "/api/v1", // 
+  baseURL: "", //
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-
 
 // =============================
 // 🔐 Request Interceptor

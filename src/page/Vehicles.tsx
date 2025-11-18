@@ -1,10 +1,6 @@
-import { useState } from "react";
-import { Vehicle, VehicleStatus } from "@/types/vehicle";
-import { Button } from "../components/ui/button";
-import { VehicleDetailsDialog } from "@/components/vehicles/VehicleDetailsDialog";
-import { VehicleFormDialog } from "@/components/vehicles/VehicleFormDialog";
+import { useEffect, useState } from "react";
 import {
-
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -13,69 +9,43 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
-
 import { Plus } from "lucide-react";
+import { VehicleStatus, type Vehicle } from "../types/vehicle";
+import { toast } from "react-toastify";
+import { Button } from "../components/ui/button";
 import { VehicleTable } from "../components/vehicle/VehicleTable";
-
-// Mock data
-const mockVehicles: Vehicle[] = [
-  {
-    vehicleId: 1,
-    contractId: 101,
-    licensePlate: "ABC-1234",
-    vin: "1HGBH41JXMN109186",
-    make: "Tesla",
-    model: "Model 3",
-    year: 2023,
-    color: "Pearl White",
-    batteryCapacityKwh: 75.5,
-    chargingPortType: "NACS",
-    purchaseDate: "2023-05-15",
-    purchasePrice: 45000,
-    coOwnerGroupId: null,
-    status: VehicleStatus.Active,
-  },
-  {
-    vehicleId: 2,
-    contractId: 102,
-    licensePlate: "XYZ-5678",
-    vin: "2HGBH41JXMN109187",
-    make: "Nissan",
-    model: "Leaf",
-    year: 2022,
-    color: "Electric Blue",
-    batteryCapacityKwh: 62.0,
-    chargingPortType: "CCS2",
-    purchaseDate: "2022-08-20",
-    purchasePrice: 32000,
-    coOwnerGroupId: null,
-    status: VehicleStatus.Maintenance,
-  },
-  {
-    vehicleId: 3,
-    contractId: null,
-    licensePlate: "DEF-9012",
-    vin: "3HGBH41JXMN109188",
-    make: "BMW",
-    model: "i4",
-    year: 2024,
-    color: "Mineral Gray",
-    batteryCapacityKwh: 83.9,
-    chargingPortType: "CCS2",
-    purchaseDate: "2024-01-10",
-    purchasePrice: 58000,
-    coOwnerGroupId: 5,
-    status: VehicleStatus.Active,
-  },
-];
+import { VehicleDetailsDialog } from "../components/vehicle/VehicleDetail";
+import { VehicleFormDialog } from "../components/vehicle/VehicleDetailFormDialog";
+import { getVehicles } from "../api/vehicleApi";
 
 const Vehicles = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchVehicles = async () => {
+    try {
+      setLoading(true);
+      const res = await getVehicles();
+      if (res) {
+        setVehicles(res);
+      } else {
+        setVehicles([]);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Error loading vehicles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
 
   const handleView = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
@@ -94,8 +64,12 @@ const Vehicles = () => {
 
   const confirmDelete = () => {
     if (vehicleToDelete) {
-      setVehicles(vehicles.filter((v) => v.vehicleId !== vehicleToDelete.vehicleId));
-      toast.success(`Vehicle ${vehicleToDelete.licensePlate} deleted successfully`);
+      setVehicles(
+        vehicles.filter((v) => v.vehicleId !== vehicleToDelete.vehicleId)
+      );
+      toast.success(
+        `Vehicle ${vehicleToDelete.licensePlate} deleted successfully`
+      );
       setVehicleToDelete(null);
       setDeleteDialogOpen(false);
     }
@@ -108,7 +82,6 @@ const Vehicles = () => {
 
   const handleFormSubmit = (data: any) => {
     if (selectedVehicle) {
-      // Edit existing vehicle
       setVehicles(
         vehicles.map((v) =>
           v.vehicleId === selectedVehicle.vehicleId
@@ -178,7 +151,10 @@ const Vehicles = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>

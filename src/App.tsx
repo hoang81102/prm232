@@ -1,10 +1,9 @@
-
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./page/Login";
-import HomePage from "./page/HomePage"; 
+import HomePage from "./page/HomePage";
 import Register from "./page/Register";
 import ForgotPassword from "./page/forgotPassword";
 
@@ -28,7 +27,7 @@ import ChangePassword from "./page/ChangePassword";
 
 // 👇 import ProtectedRoute
 import ProtectedRoute from "./Routes/ProtectedRoute";
-import AdminVehicles from "./components/Admin/VehicleManagement";
+import Vehicles from "./page/Vehicles";
 
 function App() {
   return (
@@ -45,10 +44,9 @@ function App() {
         <Route
           path="/admin"
           element={
-            // <ProtectedRoute allowedRoles={["Admin"]}>
-            //   <AdminLayout />
-            // </ProtectedRoute>
-            <AdminLayout />
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminLayout />
+            </ProtectedRoute>
           }
         >
           {/* các path con KHÔNG cần /admin ở trước */}
@@ -56,7 +54,7 @@ function App() {
           <Route path="usermanagement/:id" element={<UserDetails />} />
           <Route path="groups" element={<GroupManagement />} />
           <Route path="groups/:id" element={<GroupDetails />} />
-          <Route path="vehicles" element={<AdminVehicles />} />
+          <Route path="vehicles" element={<Vehicles />} />
           <Route path="dashboard" element={<AdminDashboard />} />
         </Route>
 
@@ -64,7 +62,7 @@ function App() {
         <Route
           path="/CoOwner"
           element={
-            <ProtectedRoute allowedRoles={[ "Staff", "CoOwner"]}>
+            <ProtectedRoute allowedRoles={["Staff", "CoOwner"]}>
               <UserLayout />
             </ProtectedRoute>
           }

@@ -1,11 +1,24 @@
 import { useState } from "react";
 
 import { VehicleStatusBadge } from "./VehicleStatusBadge";
-import { Eye, Pencil, Trash2, Search } from "lucide-react";
+import { Eye, Pencil, Trash2, Search, MoreHorizontal, Pen } from "lucide-react";
 import { Input } from "../ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../ui/table";
 import { Button } from "../ui/button";
 import type { Vehicle } from "../../types/vehicle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 interface VehicleTableProps {
   vehicles: Vehicle[];
@@ -34,20 +47,20 @@ export const VehicleTable = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
             placeholder="Search by license plate, VIN, make, or model..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className="pl-9 text-gray-500"
           />
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card shadow-sm">
+      <div className="rounded-lg border shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-emerald-300">
               <TableHead>License Plate</TableHead>
               <TableHead>Make & Model</TableHead>
               <TableHead>Year</TableHead>
@@ -60,52 +73,65 @@ export const VehicleTable = ({
           <TableBody>
             {filteredVehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No vehicles found
                 </TableCell>
               </TableRow>
             ) : (
               filteredVehicles.map((vehicle) => (
-                <TableRow key={vehicle.vehicleId} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{vehicle.licensePlate}</TableCell>
+                <TableRow key={vehicle.vehicleId} className="hover:bg-gray-200">
+                  <TableCell className="font-medium">
+                    {vehicle.licensePlate}
+                  </TableCell>
                   <TableCell>
                     {vehicle.make && vehicle.model
                       ? `${vehicle.make} ${vehicle.model}`
                       : "N/A"}
                   </TableCell>
                   <TableCell>{vehicle.year || "N/A"}</TableCell>
-                  <TableCell className="font-mono text-sm">{vehicle.vin}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {vehicle.vin}
+                  </TableCell>
                   <TableCell>{vehicle.batteryCapacityKwh || "N/A"}</TableCell>
                   <TableCell>
                     <VehicleStatusBadge status={vehicle.status} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onView(vehicle)}
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(vehicle)}
-                        title="Edit vehicle"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(vehicle)}
-                        title="Delete vehicle"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            onView(vehicle);
+                          }}
+                          className="hover:bg-gray-300"
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Xem chi tiết
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onEdit(vehicle)}
+                          className="hover:bg-gray-300"
+                        >
+                          <Pen className="mr-2 h-4 w-4" />
+                          Tải xuống
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onDelete(vehicle)}
+                          className="text-red-500 hover:bg-gray-300"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Xóa
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))

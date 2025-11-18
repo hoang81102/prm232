@@ -2,7 +2,18 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import type { ReactNode } from "react";
-import { Car, FileText, Group, HomeIcon, Menu, Settings, User, UsersRound, X, type Home } from "lucide-react";
+import {
+  Car,
+  FileText,
+  Group,
+  HomeIcon,
+  Menu,
+  Settings,
+  User,
+  UsersRound,
+  X,
+  type Home,
+} from "lucide-react";
 import { FaMoneyBill } from "react-icons/fa";
 import { Button } from "../components/ui/button";
 
@@ -62,14 +73,13 @@ const AdminSideBar: React.FC = () => {
       path: "/admin/contracts",
       hasDropdown: false,
     },
- {
+    {
       id: "finances",
       title: "Quản lí tài chính",
       icon: <FaMoneyBill />,
       path: "/admin/contracts",
       hasDropdown: false,
     },
-   
   ];
 
   const handleDropdownToggle = (itemId: string) => {
@@ -95,10 +105,10 @@ const AdminSideBar: React.FC = () => {
     <div
       className={`bg-[rgb(255,255,255)] h-screen shadow-2xl transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-72"
-      } flex flex-col`}
+      } flex flex-col border-r border-r-gray-200`}
     >
       {/* Header */}
-      <div className="p-6 border-b border-[#C9E6F0]">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center space-x-3">
@@ -202,19 +212,17 @@ const AdminSideBar: React.FC = () => {
       </nav>
 
       {/* Footer - Logout */}
-    
-      <div className="p-4 border-t border-borde">
-          <Button
-            variant="outline"
-            className="w-full gap-2 hover:bg-emerald-300"
-            onClick={handleLogout}
-          >
-            <Settings className="w-4 h-4" />
-            {!isCollapsed && (
-              <span className="text-sm font-medium">Logout</span>
-            )}
-          </Button>
-        </div>
+
+      <div className="p-4 border-t border-gray-200">
+        <Button
+          variant="outline"
+          className="w-full gap-2 hover:bg-emerald-300"
+          onClick={handleLogout}
+        >
+          <Settings className="w-4 h-4" />
+          {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
+        </Button>
+      </div>
     </div>
   );
 };

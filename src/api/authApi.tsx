@@ -10,7 +10,7 @@ const USER_INFO_KEY = "userInfo";
 // =========================
 // Kiểu dữ liệu
 // =========================
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   data: T;
   message?: string;
   [key: string]: any;

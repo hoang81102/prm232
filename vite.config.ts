@@ -1,21 +1,38 @@
 // vite.config.ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'   // hoặc '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc"; // hoặc '@vitejs/plugin-react'
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+  plugins: [react(), tailwindcss()],
   server: {
-    port: 5173,                // đúng port bạn đang chạy
+    port: 5173, // đúng port bạn đang chạy
     proxy: {
-      '/api': {
-        target: 'https://localhost:7441', // BE thật
+      "/auth": {
+        target: "http://localhost:5000", // BE thật
         changeOrigin: true,
-        secure: false,                    // vì HTTPS local, cert tự ký
+        secure: false, // vì HTTPS local, cert tự ký
+      },
+      "/vehicles": {
+        target: "http://localhost:5000", // BE thật
+        changeOrigin: true,
+        secure: false, // vì HTTPS local, cert tự ký
+      },
+      "/bookings": {
+        target: "http://localhost:5000", // BE thật
+        changeOrigin: true,
+        secure: false, // vì HTTPS local, cert tự ký
+      },
+      "/finance": {
+        target: "http://localhost:5000", // BE thật
+        changeOrigin: true,
+        secure: false, // vì HTTPS local, cert tự ký
+      },
+      "/groups": {
+        target: "http://localhost:5000", // BE thật
+        changeOrigin: true,
+        secure: false, // vì HTTPS local, cert tự ký
       },
     },
   },
-})
+});

@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { Button } from "../../components/ui/button";
-import {z} from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
@@ -12,7 +12,6 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import {
-
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -45,29 +44,51 @@ const vehicleFormSchema = z.object({
 type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 interface VehicleFormProps {
-  vehicle?: Vehicle | null;
+  vehicle: Vehicle | null;
   onSubmit: (data: VehicleFormValues) => void;
   onCancel: () => void;
 }
 
-export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) => {
+export const VehicleForm = ({
+  vehicle,
+  onSubmit,
+  onCancel,
+}: VehicleFormProps) => {
+  const mapVehicleToFormValues = (v: Vehicle): VehicleFormValues => ({
+    licensePlate: v.licensePlate ?? "",
+    vin: v.vin ?? "",
+    make: v.make ?? undefined,
+    model: v.model ?? undefined,
+    year: v.year ?? new Date().getFullYear(),
+    color: v.color ?? undefined,
+    batteryCapacityKwh: v.batteryCapacityKwh ?? undefined,
+    chargingPortType: v.chargingPortType ?? "",
+    purchaseDate: v.purchaseDate ?? "",
+    purchasePrice: v.purchasePrice ?? undefined,
+    contractId: v.contractId ?? undefined,
+    coOwnerGroupId: v.coOwnerGroupId ?? undefined,
+    status: v.status,
+  });
+
   const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleFormSchema),
-    defaultValues: vehicle || {
-      licensePlate: "",
-      vin: "",
-      make: "",
-      model: "",
-      year: new Date().getFullYear(),
-      color: "",
-      batteryCapacityKwh: undefined,
-      chargingPortType: "",
-      purchaseDate: "",
-      purchasePrice: undefined,
-      contractId: undefined,
-      coOwnerGroupId: undefined,
-      status: VehicleStatus.Active,
-    },
+    resolver: zodResolver(vehicleFormSchema) as any,
+    defaultValues: vehicle
+      ? mapVehicleToFormValues(vehicle)
+      : {
+          licensePlate: "",
+          vin: "",
+          make: "",
+          model: "",
+          year: new Date().getFullYear(),
+          color: "",
+          batteryCapacityKwh: undefined,
+          chargingPortType: "",
+          purchaseDate: "",
+          purchasePrice: undefined,
+          contractId: undefined,
+          coOwnerGroupId: undefined,
+          status: VehicleStatus.Active,
+        },
   });
 
   return (
@@ -95,7 +116,11 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>VIN *</FormLabel>
                 <FormControl>
-                  <Input placeholder="1HGBH41JXMN109186" maxLength={17} {...field} />
+                  <Input
+                    placeholder="1HGBH41JXMN109186"
+                    maxLength={17}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,7 +134,11 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>Make</FormLabel>
                 <FormControl>
-                  <Input placeholder="Tesla" {...field} value={field.value || ""} />
+                  <Input
+                    placeholder="Tesla"
+                    {...field}
+                    value={field.value || ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -123,7 +152,11 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>Model</FormLabel>
                 <FormControl>
-                  <Input placeholder="Model 3" {...field} value={field.value || ""} />
+                  <Input
+                    placeholder="Model 3"
+                    {...field}
+                    value={field.value || ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -137,7 +170,12 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>Year</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="2024" {...field} value={field.value || ""} />
+                  <Input
+                    type="number"
+                    placeholder="2024"
+                    {...field}
+                    value={field.value || ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -151,7 +189,11 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>Color</FormLabel>
                 <FormControl>
-                  <Input placeholder="Pearl White" {...field} value={field.value || ""} />
+                  <Input
+                    placeholder="Pearl White"
+                    {...field}
+                    value={field.value || ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -165,7 +207,13 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>Battery Capacity (kWh)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="75.5" {...field} value={field.value || ""} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="75.5"
+                    {...field}
+                    value={field.value || ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -178,7 +226,10 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Charging Port Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || ""}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select port type" />
@@ -217,7 +268,13 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
               <FormItem>
                 <FormLabel>Purchase Price</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="45000.00" {...field} value={field.value || ""} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="45000.00"
+                    {...field}
+                    value={field.value || ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -230,16 +287,25 @@ export const VehicleForm = ({ vehicle, onSubmit, onCancel }: VehicleFormProps) =
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status *</FormLabel>
-                <Select onValueChange={(value) => field.onChange(Number(value))} value={String(field.value)}>
+                <Select
+                  onValueChange={(value) => field.onChange(Number(value))}
+                  value={String(field.value)}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value={String(VehicleStatus.Active)}>Active</SelectItem>
-                    <SelectItem value={String(VehicleStatus.Inactive)}>Inactive</SelectItem>
-                    <SelectItem value={String(VehicleStatus.Maintenance)}>Maintenance</SelectItem>
+                    <SelectItem value={String(VehicleStatus.Active)}>
+                      Active
+                    </SelectItem>
+                    <SelectItem value={String(VehicleStatus.Inactive)}>
+                      Inactive
+                    </SelectItem>
+                    <SelectItem value={String(VehicleStatus.Maintenance)}>
+                      Maintenance
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
