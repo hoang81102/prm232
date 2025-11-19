@@ -4,7 +4,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./page/Login";
 import HomePage from "./page/HomePage";
-import HomePage from "./page/HomePage";
 import Register from "./page/Register";
 import ForgotPassword from "./page/forgotPassword";
 
@@ -51,9 +50,10 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRoles={["Admin"]}>
-              <AdminLayout />
-            </ProtectedRoute>
+            // <ProtectedRoute allowedRoles={["Admin"]}>
+            //   <AdminLayout />
+            // </ProtectedRoute>
+            <AdminLayout />
           }
         >
           {/* các path con KHÔNG cần /admin ở trước */}

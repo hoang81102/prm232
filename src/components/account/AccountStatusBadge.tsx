@@ -1,19 +1,17 @@
 import { Badge } from "../ui/badge";
 
 
-interface VehicleStatusBadgeProps {
+interface AccountStatusBadgeProps {
   status: number;
 }
 
-export const VehicleStatusBadge = ({ status }: VehicleStatusBadgeProps) => {
+export const AccountStatusBadge = ({ status }: AccountStatusBadgeProps) => {
   const getStatusConfig = () => {
     switch (status) {
       case 0:
         return { label: "Maintenance", variant: "destructive" as const };
       case 1:
         return { label: "Active", variant: "default" as const };
-      case 2:
-        return { label: "Inactive", variant: "secondary" as const };
       default:
         return { label: "Unknown", variant: "secondary" as const };
     }

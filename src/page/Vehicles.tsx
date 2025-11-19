@@ -16,7 +16,7 @@ import { Button } from "../components/ui/button";
 import { VehicleTable } from "../components/vehicle/VehicleTable";
 import { VehicleDetailsDialog } from "../components/vehicle/VehicleDetail";
 import { VehicleFormDialog } from "../components/vehicle/VehicleDetailFormDialog";
-import { getVehicles } from "../api/vehicleApi";
+import { addVehicle, deleteVehicle, getVehicle, getVehicles } from "../api/vehicleApi";
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -47,9 +47,16 @@ const Vehicles = () => {
     fetchVehicles();
   }, []);
 
-  const handleView = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
-    setViewDialogOpen(true);
+
+  const handleView = async (vehicle: Vehicle) => {
+     try {
+      const res = await getVehicle(vehicle.vehicleId);
+      if (!res) throw new Error("Failed to load vehicle details");
+      setSelectedVehicle(res);
+      setViewDialogOpen(true);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   const handleEdit = (vehicle: Vehicle) => {
@@ -62,14 +69,18 @@ const Vehicles = () => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (vehicleToDelete) {
-      setVehicles(
-        vehicles.filter((v) => v.vehicleId !== vehicleToDelete.vehicleId)
+  const confirmDelete = async () => {
+    if (!vehicleToDelete) return;
+    try {
+      const res = await deleteVehicle(vehicleToDelete.vehicleId);
+      if (!res) throw new Error("Failed to delete vehicle");
+      toast.success(`Vehicle ${vehicleToDelete.licensePlate} deleted successfully`);
+      setVehicles((prev) =>
+        prev.filter((v) => v.vehicleId !== vehicleToDelete.vehicleId)
       );
-      toast.success(
-        `Vehicle ${vehicleToDelete.licensePlate} deleted successfully`
-      );
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
       setVehicleToDelete(null);
       setDeleteDialogOpen(false);
     }
@@ -80,7 +91,7 @@ const Vehicles = () => {
     setFormDialogOpen(true);
   };
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = async (data: any) => {
     if (selectedVehicle) {
       setVehicles(
         vehicles.map((v) =>
@@ -92,11 +103,9 @@ const Vehicles = () => {
       toast.success(`Vehicle ${data.licensePlate} updated successfully`);
     } else {
       // Add new vehicle
-      const newVehicle: Vehicle = {
-        ...data,
-        vehicleId: Math.max(...vehicles.map((v) => v.vehicleId), 0) + 1,
-      };
-      setVehicles([...vehicles, newVehicle]);
+      const res = await addVehicle(data);
+      if (!res) throw new Error("Failed to delete vehicle");
+      setVehicles([...vehicles, res]);
       toast.success(`Vehicle ${data.licensePlate} added successfully`);
     }
   };
@@ -138,7 +147,7 @@ const Vehicles = () => {
         />
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -150,10 +159,10 @@ const Vehicles = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="border-0 !border-0 shadow-none !shadow-none hover:bg-slate-300">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-red-500 text-destructive-foreground hover:bg-red-500 hover:text-white"
               >
                 Delete
               </AlertDialogAction>

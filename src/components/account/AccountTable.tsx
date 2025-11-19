@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { VehicleStatusBadge } from "./VehicleStatusBadge";
+import { VehicleStatusBadge } from "./AccountStatusBadge";
 import { Eye, Pencil, Trash2, Search, MoreHorizontal, Pen } from "lucide-react";
 import { Input } from "../ui/input";
 import {

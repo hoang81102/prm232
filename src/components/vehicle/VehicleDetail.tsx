@@ -29,8 +29,8 @@ export const VehicleDetailsDialog = ({
     value: string | number | null | undefined;
   }) => (
     <div className="flex justify-between py-2">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value || "N/A"}</span>
+      <span className="text-sm font-medium text-slate-600">{label}</span>
+      <span className="text-sm font-medium text-orange-400">{value || "N/A"}</span>
     </div>
   );
 
@@ -38,7 +38,7 @@ export const VehicleDetailsDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-white max-w-4xl! w-full max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Vehicle Details</DialogTitle>
+          <DialogTitle className="text-2xl text-slate-800">Vehicle Details</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -58,14 +58,14 @@ export const VehicleDetailsDialog = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <h4 className="font-semibold mb-2">Basic Information</h4>
+              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Basic Information</h4>
               <DetailRow label="VIN" value={vehicle.vin} />
               <DetailRow label="Year" value={vehicle.year} />
               <DetailRow label="Color" value={vehicle.color} />
             </div>
 
             <div className="space-y-1">
-              <h4 className="font-semibold mb-2">Technical Specs</h4>
+              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Technical Specs</h4>
               <DetailRow
                 label="Battery Capacity"
                 value={
@@ -81,7 +81,7 @@ export const VehicleDetailsDialog = ({
             </div>
 
             <div className="space-y-1">
-              <h4 className="font-semibold mb-2">Purchase Information</h4>
+              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Purchase Information</h4>
               <DetailRow label="Purchase Date" value={vehicle.purchaseDate} />
               <DetailRow
                 label="Purchase Price"
@@ -94,7 +94,7 @@ export const VehicleDetailsDialog = ({
             </div>
 
             <div className="space-y-1">
-              <h4 className="font-semibold mb-2">References</h4>
+              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">References</h4>
               <DetailRow label="Contract ID" value={vehicle.contractId} />
               <DetailRow
                 label="Co-Owner Group ID"

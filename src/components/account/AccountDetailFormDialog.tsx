@@ -3,29 +3,30 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../../components/ui/dialog";
+} from "../ui/dialog";
 import type { Vehicle } from "../../types/vehicle";
-import { VehicleForm } from "./VehicleForm";
+import { VehicleForm } from "./AccountForm";
+import type { Account, AccountDetail } from "../../types/account";
 
-interface VehicleFormDialogProps {
-  vehicle: Vehicle | null;
+interface AccountFormDialogProps {
+  account: Account | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
 }
 
-export const VehicleFormDialog = ({
-  vehicle,
+export const AccountFormDialog = ({
+  account,
   open,
   onOpenChange,
   onSubmit,
-}: VehicleFormDialogProps) => {
+}: AccountFormDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto bg-white max-w-4xl!">
         <DialogHeader>
           <DialogTitle className="text-2xl">
-            {vehicle ? "Edit Vehicle" : "Add New Vehicle"}
+            {account ? "Edit Account" : "Add New Account"}
           </DialogTitle>
         </DialogHeader>
 
