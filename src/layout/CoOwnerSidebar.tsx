@@ -3,6 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import type { ReactNode } from "react";
 
+// 👉 import API logout
+import { logout } from "../api/authApi"; // nhớ sửa path đúng với cấu trúc của bạn
+
 type MenuSubItem = {
   title: string;
   path: string;
@@ -32,6 +35,13 @@ const UserSidebar: React.FC = () => {
       hasDropdown: false,
     },
     {
+      id: "GroupPage",
+      title: "Grouppage",
+      icon: "🏠",
+      path: "/CoOwner/grouppage",
+      hasDropdown: false,
+    },
+    {
       id: "schedules",
       title: "My Schedules",
       icon: "📄",
@@ -39,17 +49,18 @@ const UserSidebar: React.FC = () => {
       hasDropdown: false,
     },
     {
-      id: "orders",
-      title: "My Orders",
-      icon: "🛒",
-      path: "/CoOwner/orders",
-      hasDropdown: true,
-      subItems: [
-        { title: "All Orders", path: "/user/orders" },
-        { title: "Processing", path: "/user/orders/processing" },
-        { title: "Completed", path: "/user/orders/completed" },
-        { title: "Cancelled", path: "/user/orders/cancelled" },
-      ],
+      id: "vote",
+      title: "Vote",
+      icon: "👤",
+      path: "/CoOwner/Vote",
+      hasDropdown: false,
+    },
+    {
+      id: "cost",
+      title: "Cost",
+      icon: "👤",
+      path: "/CoOwner/Cost",
+      hasDropdown: false,
     },
     {
       id: "profile",
@@ -70,11 +81,24 @@ const UserSidebar: React.FC = () => {
     );
   };
 
-  const handleLogout = () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      toast.success("Successfully logged out");
+  // ==========================================================
+  // 🔥 NEW LOGOUT — gọi API /auth/logout?refreshToken=...
+  // ==========================================================
+  const handleLogout = async () => {
+    if (!window.confirm("Are you sure you want to log out?")) return;
+
+    const refreshToken = localStorage.getItem("refreshToken") ?? undefined;
+
+    try {
+      // gọi API logout
+      await logout(refreshToken);
+
+      // API logout đã tự clear localStorage và toast
+
+      navigate("/");
+    } catch (error) {
+      console.error("LOGOUT ERROR:", error);
+      toast.error("Logout failed, but you have been redirected.");
       navigate("/");
     }
   };

@@ -4,6 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./page/Login";
 import HomePage from "./page/HomePage";
+import HomePage from "./page/HomePage";
 import Register from "./page/Register";
 import ForgotPassword from "./page/forgotPassword";
 
@@ -27,6 +28,11 @@ import ChangePassword from "./page/ChangePassword";
 
 // 👇 import ProtectedRoute
 import ProtectedRoute from "./Routes/ProtectedRoute";
+import Permission from "./page/Permission";
+import CoOwnerOnboarding from "./components/CoOwner/CoOwnerOnboarding";
+import CoOwnerCost from "./components/CoOwner/CoOwnerCost";
+import CoOwnerVote from "./components/CoOwner/CoOwnerVote";
+import CoOwnerGroupPage from "./components/CoOwner/CoOwnerGroupPage";
 import Vehicles from "./page/Vehicles";
 
 function App() {
@@ -39,6 +45,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/apply" element={<ApplicantUploadForm />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/permission" element={<Permission />} />
 
         {/* Admin Routes in AdminLayout */}
         <Route
@@ -68,7 +75,11 @@ function App() {
           }
         >
           <Route path="dashboard" element={<UserDashboard />} />
+          <Route path="grouppage" element={<CoOwnerGroupPage />} />
+          <Route path="grouppage/onboarding" element={<CoOwnerOnboarding />} />
           <Route path="schedules" element={<WeeklySchedule />} />
+          <Route path="cost" element={<CoOwnerCost />} />
+          <Route path="vote" element={<CoOwnerVote />} />
           <Route path="profile" element={<UserProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>

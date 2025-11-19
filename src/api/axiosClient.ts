@@ -8,14 +8,12 @@ declare module "axios" {
     skipAuth?: boolean;
   }
 }
-
-const axiosClient = axios.create({
-  baseURL: "", //
+  const axiosClient = axios.create({
+  baseURL: "/", 
   headers: {
     "Content-Type": "application/json",
   },
-});
-
+  });
 // =============================
 // 🔐 Request Interceptor
 // =============================
@@ -24,11 +22,8 @@ axiosClient.interceptors.request.use(
     const token = localStorage.getItem("token");
 
     if (token && !config.skipAuth) {
-      // Dùng AxiosHeaders.from để tạo headers đúng kiểu
-      const headers = AxiosHeaders.from(config.headers);
-
-      headers.set("Authorization", `Bearer ${token}`);
-
+        const headers = AxiosHeaders.from(config.headers);
+       headers.set("Authorization", `Bearer ${token}`);
       config.headers = headers;
     }
 
@@ -48,7 +43,7 @@ axiosClient.interceptors.response.use(
     if (status === 401) {
       console.warn("Token expired → redirect to login");
       localStorage.removeItem("token");
-      // window.location.href = "/login";  // tùy bạn bật hay không
+      // window.location.href = "/login";
     }
 
     return Promise.reject(error);

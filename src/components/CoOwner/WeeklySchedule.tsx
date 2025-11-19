@@ -1,33 +1,31 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createBooking,
+  getMyBookings,
+  type Booking,
+} from "../../api/bookingsApi";
+import { getVehiclesByGroup, type Vehicle } from "../../api/vehiclesApi";
 
 /** ================== TYPES ================== */
 type UserId = string;
 type SlotId = string; // e.g. "2025-12-01#AM"
 type SlotPeriod = "AM" | "PM"; // Sáng / Chiều
-type PeriodChoice = "" | SlotPeriod | "FULL"; // thêm CẢ NGÀY
 
 type SlotBooking = {
   slotId: SlotId;
   userId: UserId;
   userName: string;
   date: string; // YYYY-MM-DD
-  period: SlotPeriod; // AM hoặc PM (FULL sẽ tạo 2 slot)
+  period: SlotPeriod;
   vehicle: string;
-  purpose?: string;
 };
 
 type WeekBookings = Record<SlotId, SlotBooking | undefined>;
 
 type WeeklyScheduleProps = {
-  groupId?: string;
   currentUserId?: UserId;
   currentUserName?: string;
+  groupId?: number; // lấy DS xe theo nhóm
 };
 
 /** ================== CONFIG / HASHCODE ================== */
@@ -81,77 +79,55 @@ function slotIdFor(date: Date, period: SlotPeriod): SlotId {
   return `${isoDate(date)}#${period}`;
 }
 
-/** ================== STORAGE (localStorage) ================== */
-function weekKey(groupId: string, weekStart: Date) {
-  return `WEEKLY_SCHEDULE__${groupId}__${isoDate(weekStart)}`;
-}
+/** ================== MAP BOOKING -> UI SLOT ================== */
+function bookingToSlotBooking(
+  apiBooking: Booking,
+  currentUserId: string,
+  currentUserName: string,
+  vehicles: Vehicle[]
+): SlotBooking {
+  const start = new Date(apiBooking.startTime);
+  const dateStr = isoDate(start);
+  const hour = start.getHours();
+  const period: SlotPeriod = hour < 12 ? "AM" : "PM";
+  const slotId = slotIdFor(start, period);
 
-function loadWeek(groupId: string, weekStart: Date): WeekBookings {
-  try {
-    const raw = localStorage.getItem(weekKey(groupId, weekStart));
-    return raw ? (JSON.parse(raw) as WeekBookings) : {};
-  } catch {
-    return {};
-  }
-}
+  const vInfo = vehicles.find((v) => v.vehicleId === apiBooking.vehicleId);
+  const vehicleLabel = vInfo
+    ? `${vInfo.make} ${vInfo.model} - ${vInfo.licensePlate}`
+    : `Xe #${apiBooking.vehicleId}`;
 
-function saveWeek(groupId: string, weekStart: Date, data: WeekBookings) {
-  localStorage.setItem(weekKey(groupId, weekStart), JSON.stringify(data));
+  return {
+    slotId,
+    userId: String(apiBooking.userId ?? currentUserId),
+    userName: currentUserName,
+    date: dateStr,
+    period,
+    vehicle: vehicleLabel,
+  };
 }
-
-/** ================== MOCK XE ================== */
-const vehicles = [
-  { id: 1, name: "Tesla Model 3", plate: "HN-123" },
-  { id: 2, name: "VinFast VF8", plate: "HN-456" },
-  { id: 3, name: "BYD Atto 3", plate: "HN-789" },
-];
 
 /** ================== COMPONENT ================== */
 const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
-  groupId,
   currentUserId,
   currentUserName,
+  groupId,
 }) => {
-  const _groupId = groupId ?? "GROUP-DEMO";
+  // nếu không truyền từ ngoài vào thì vẫn có default
   const _currentUserId = currentUserId ?? "u-demo";
   const _currentUserName = currentUserName ?? "Demo User";
+  const _groupId = groupId ?? 1;
 
-  // tuần đang xem
   const [weekStart, setWeekStart] = useState<Date>(() =>
     toStartOfWeekMonday(new Date())
   );
+
+  // danh sách xe thật từ DB
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
+  // booking lấy từ API (của user hiện tại)
+  const [allSlots, setAllSlots] = useState<SlotBooking[]>([]);
   const [bookings, setBookings] = useState<WeekBookings>({});
-  const pollRef = useRef<number | null>(null);
-
-  const reload = useCallback(() => {
-    const data = loadWeek(_groupId, weekStart);
-    setBookings(data);
-  }, [_groupId, weekStart]);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
-
-  // lắng nghe tab khác
-  useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key === weekKey(_groupId, weekStart)) {
-        reload();
-      }
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, [_groupId, weekStart, reload]);
-
-  // poll nhẹ
-  useEffect(() => {
-    pollRef.current = window.setInterval(() => {
-      reload();
-    }, 2000);
-    return () => {
-      if (pollRef.current) window.clearInterval(pollRef.current);
-    };
-  }, [reload]);
 
   const days: Date[] = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -159,89 +135,117 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
   );
   const periods: SlotPeriod[] = useMemo(() => ["AM", "PM"], []);
 
-  /** ==== FORM ĐĂNG KÝ (SÁNG / CHIỀU / CẢ NGÀY) ==== */
+  /** ==== GỌI API LẤY DS XE THEO GROUP ==== */
+  useEffect(() => {
+    async function loadVehicles() {
+      try {
+        const list = await getVehiclesByGroup(_groupId);
+        setVehicles(list);
+      } catch (e) {
+        console.error("LOAD VEHICLES ERROR", e);
+      }
+    }
+
+    loadVehicles();
+  }, [_groupId]);
+
+  /** ==== GỌI API LẤY LỊCH SỬ BOOKING (mine) ==== */
+  const reloadFromApi = useCallback(async () => {
+    try {
+      const apiBookings = await getMyBookings(); // Booking[]
+      const slots = apiBookings.map((b) =>
+        bookingToSlotBooking(b, _currentUserId, _currentUserName, vehicles)
+      );
+      setAllSlots(slots);
+    } catch (e) {
+      console.error("LOAD BOOKINGS ERROR", e);
+    }
+  }, [_currentUserId, _currentUserName, vehicles]);
+
+  useEffect(() => {
+    void reloadFromApi();
+  }, [reloadFromApi]);
+
+  // Build lại map bookings cho tuần đang xem
+  useEffect(() => {
+    const map: WeekBookings = {};
+    const weekEnd = addDays(weekStart, 7);
+
+    for (const s of allSlots) {
+      const d = new Date(s.date);
+      d.setHours(0, 0, 0, 0);
+      if (d >= weekStart && d < weekEnd) {
+        map[s.slotId] = s;
+      }
+    }
+    setBookings(map);
+  }, [allSlots, weekStart]);
+
+  /** ==== FORM ĐẶT XE (chỉ nhập thời gian) ==== */
   const [showForm, setShowForm] = useState(false);
   const [newBooking, setNewBooking] = useState<{
     date: string;
-    period: PeriodChoice; // "", "AM", "PM", "FULL"
-    vehicle: string;
-    purpose: string;
+    startTime: string; // HH:mm
+    endTime: string; // HH:mm
+    vehicleId: number | "";
   }>({
     date: "",
-    period: "",
-    vehicle: "",
-    purpose: "",
+    startTime: "",
+    endTime: "",
+    vehicleId: "",
   });
 
-  const handleCreateBooking = () => {
-    if (!newBooking.date || !newBooking.period || !newBooking.vehicle) {
-      alert("Vui lòng chọn đầy đủ: Ngày, Buổi và Xe");
+  const handleCreateBooking = async () => {
+    if (
+      !newBooking.date ||
+      !newBooking.startTime ||
+      !newBooking.endTime ||
+      !newBooking.vehicleId
+    ) {
+      alert("Vui lòng chọn đầy đủ: Ngày, giờ bắt đầu, giờ kết thúc và xe");
       return;
     }
 
-    const dateObj = new Date(newBooking.date);
-    if (isNaN(dateObj.getTime())) {
-      alert("Ngày không hợp lệ");
+    // ghép date + time -> ISO string giống swagger
+    const start = new Date(`${newBooking.date}T${newBooking.startTime}:00`);
+    const end = new Date(`${newBooking.date}T${newBooking.endTime}:00`);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      alert("Thời gian không hợp lệ");
+      return;
+    }
+    if (end <= start) {
+      alert("Giờ kết thúc phải sau giờ bắt đầu");
       return;
     }
 
-    const weekStartForDate = toStartOfWeekMonday(dateObj);
-    const weekData = loadWeek(_groupId, weekStartForDate);
-
-    const makeSlotBooking = (period: SlotPeriod): SlotBooking => ({
-      slotId: slotIdFor(dateObj, period),
-      userId: _currentUserId,
-      userName: _currentUserName,
-      date: isoDate(dateObj),
-      period,
-      vehicle: newBooking.vehicle,
-      purpose: newBooking.purpose || undefined,
+    const created = await createBooking({
+      vehicleId: newBooking.vehicleId as number,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
     });
 
-    if (newBooking.period === "AM" || newBooking.period === "PM") {
-      const slotId = slotIdFor(dateObj, newBooking.period);
-      if (weekData[slotId]) {
-        alert("Buổi này trong ngày đó đã có người đăng ký rồi.");
-        return;
-      }
-      const updated = {
-        ...weekData,
-        [slotId]: makeSlotBooking(newBooking.period),
-      };
-      saveWeek(_groupId, weekStartForDate, updated);
-      setWeekStart(weekStartForDate);
-      setBookings(updated);
-      alert("Đăng ký thành công!");
-    } else if (newBooking.period === "FULL") {
-      const amId = slotIdFor(dateObj, "AM");
-      const pmId = slotIdFor(dateObj, "PM");
-      if (weekData[amId] || weekData[pmId]) {
-        alert(
-          "Không thể đăng ký cả ngày vì đã có người đăng ký Sáng hoặc Chiều."
-        );
-        return;
-      }
-      const updated: WeekBookings = {
-        ...weekData,
-        [amId]: makeSlotBooking("AM"),
-        [pmId]: makeSlotBooking("PM"),
-      };
-      saveWeek(_groupId, weekStartForDate, updated);
-      setWeekStart(weekStartForDate);
-      setBookings(updated);
-      alert("Đăng ký cả ngày thành công!");
+    if (created) {
+      const slot = bookingToSlotBooking(
+        created,
+        _currentUserId,
+        _currentUserName,
+        vehicles
+      );
+      setAllSlots((prev) => [...prev, slot]);
+      alert("Đặt xe thành công!");
     }
 
     setShowForm(false);
     setNewBooking({
       date: "",
-      period: "",
-      vehicle: "",
-      purpose: "",
+      startTime: "",
+      endTime: "",
+      vehicleId: "",
     });
   };
 
-  /** ==== DANH SÁCH BUỔI ĐĂNG KÝ TRONG TUẦN ==== */
+  /** ==== DANH SÁCH BUỔI TRONG TUẦN ==== */
   const currentWeekBookings: SlotBooking[] = useMemo(() => {
     const arr = Object.values(bookings).filter((b): b is SlotBooking =>
       Boolean(b)
@@ -275,12 +279,11 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-1">
-            Đăng ký &amp; Lịch sử dụng xe
+            Đặt xe &amp; lịch sử sử dụng
           </h1>
           <p className="text-sm text-gray-600">
-            Đăng ký theo{" "}
-            <span className="font-semibold">buổi Sáng / Chiều / Cả ngày</span>{" "}
-            và xem lịch sử dụng theo tuần.
+            Chọn <b>ngày</b> và <b>giờ bắt đầu / kết thúc</b> để đặt xe. Dữ liệu
+            sẽ được hiển thị theo tuần.
           </p>
         </div>
         <button
@@ -288,23 +291,24 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
           className="inline-flex items-center justify-center rounded-lg bg-linear-to-r from-orange-500 to-amber-400 px-4 py-2 text-sm font-medium text-white shadow hover:brightness-105"
         >
           <span className="mr-2">➕</span>
-          Đăng ký buổi mới
+          Đặt xe mới
         </button>
       </div>
 
-      {/* Form đăng ký */}
+      {/* Form đặt xe */}
       {showForm && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
           <div className="px-6 pt-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-1">
-              Đăng ký sử dụng xe theo buổi
+              Đặt xe theo khoảng thời gian
             </h2>
             <p className="text-sm text-gray-500 mb-4">
-              Chọn ngày, buổi (Sáng / Chiều / Cả ngày) và xe bạn muốn sử dụng.
+              API yêu cầu các trường <code>vehicleId</code>,{" "}
+              <code>startTime</code>, <code>endTime</code>.
             </p>
           </div>
           <div className="px-6 pb-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Ngày */}
               <div className="space-y-1.5">
                 <label
@@ -327,108 +331,73 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
                 />
               </div>
 
-              {/* Buổi */}
+              {/* Giờ bắt đầu */}
               <div className="space-y-1.5">
-                <span className="block text-sm font-medium text-gray-700">
-                  Buổi <span className="text-red-500">*</span>
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNewBooking((prev) => ({ ...prev, period: "AM" }))
-                    }
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                      newBooking.period === "AM"
-                        ? "border-orange-500 bg-orange-50 text-orange-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    🌅 Sáng
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNewBooking((prev) => ({ ...prev, period: "PM" }))
-                    }
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                      newBooking.period === "PM"
-                        ? "border-orange-500 bg-orange-50 text-orange-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    🌇 Chiều
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNewBooking((prev) => ({ ...prev, period: "FULL" }))
-                    }
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                      newBooking.period === "FULL"
-                        ? "border-orange-500 bg-orange-50 text-orange-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    📆 Cả ngày
-                  </button>
-                </div>
+                <label
+                  htmlFor="startTime"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Giờ bắt đầu <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="startTime"
+                  type="time"
+                  value={newBooking.startTime}
+                  onChange={(e) =>
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      startTime: e.target.value,
+                    }))
+                  }
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                />
+              </div>
+
+              {/* Giờ kết thúc */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="endTime"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Giờ kết thúc <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="endTime"
+                  type="time"
+                  value={newBooking.endTime}
+                  onChange={(e) =>
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      endTime: e.target.value,
+                    }))
+                  }
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                />
               </div>
 
               {/* Chọn xe */}
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-gray-700">
-                  Chọn xe <span className="text-red-500">*</span>
+                  Xe <span className="text-red-500">*</span>
                 </label>
                 <select
-                  value={newBooking.vehicle}
+                  value={newBooking.vehicleId || ""}
                   onChange={(e) =>
                     setNewBooking((prev) => ({
                       ...prev,
-                      vehicle: e.target.value,
+                      vehicleId: e.target.value ? Number(e.target.value) : "",
                     }))
                   }
                   className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
                 >
                   <option value="">-- Chọn xe --</option>
                   {vehicles.map((v) => (
-                    <option
-                      key={v.id}
-                      value={`${v.name} - ${v.plate}`}
-                    >{`${v.name} - ${v.plate}`}</option>
+                    <option key={v.vehicleId} value={v.vehicleId}>
+                      {v.make} {v.model} - {v.licensePlate}
+                    </option>
                   ))}
                 </select>
               </div>
-            </div>
-
-            {/* Mục đích */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="purpose"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Mục đích sử dụng (không bắt buộc)
-              </label>
-              <textarea
-                id="purpose"
-                rows={3}
-                value={newBooking.purpose}
-                onChange={(e) =>
-                  setNewBooking((prev) => ({
-                    ...prev,
-                    purpose: e.target.value,
-                  }))
-                }
-                placeholder="VD: Đi làm, đón khách, đi công tác..."
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200"
-              />
-            </div>
-
-            <div className="rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 border border-blue-100">
-              <strong>Lưu ý:</strong> Mỗi buổi (Sáng / Chiều) trong một ngày chỉ
-              có thể được đăng ký bởi một người. Nếu đã có người đăng ký, bạn sẽ
-              không thể chọn buổi đó. Chọn <b>Cả ngày</b> sẽ chiếm cả Sáng &amp;
-              Chiều.
             </div>
 
             {/* Actions */}
@@ -439,7 +408,7 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
                 className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-orange-600"
               >
                 <span className="mr-2">✅</span>
-                Đăng ký buổi này
+                Đặt xe
               </button>
               <button
                 type="button"
@@ -464,7 +433,7 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
             {totalSessions} buổi
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Tính cho tuần bắt đầu từ{" "}
+            Tuần bắt đầu từ{" "}
             <span className="font-medium">{isoDate(weekStart)}</span>.
           </p>
         </div>
@@ -477,7 +446,7 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
             {morningSessions} buổi
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Đã đăng ký vào các buổi 🌅 Sáng.
+            Suy ra từ các booking có giờ bắt đầu &lt; 12h.
           </p>
         </div>
 
@@ -489,7 +458,7 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
             {afternoonSessions} buổi
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Đã đăng ký vào các buổi 🌇 Chiều.
+            Suy ra từ các booking có giờ bắt đầu &ge; 12h.
           </p>
         </div>
       </div>
@@ -530,12 +499,6 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
                         👤 <span className="font-medium">{b.userName}</span>
                       </span>
                     </div>
-                    {b.purpose && (
-                      <p className="mt-1 text-sm text-gray-700">
-                        <span className="font-medium">Mục đích:</span>{" "}
-                        {b.purpose}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}
@@ -544,7 +507,7 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
         </div>
       </div>
 
-      {/* Lịch tuần: chỉ hiển thị, không cho click đăng ký */}
+      {/* Lịch tuần */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -583,7 +546,7 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
           <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-700">
             <div className="flex items-center gap-2">
               <span className="inline-block w-3 h-3 rounded bg-gray-200" />
-              <span>Chưa có ai đăng ký</span>
+              <span>Chưa có booking</span>
             </div>
             <div className="flex items-center gap-2">
               <span
@@ -591,11 +554,11 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
                   _currentUserId
                 )}`}
               />
-              <span>Buổi do bạn đăng ký</span>
+              <span>Khoảng thời gian bạn đã đặt</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="inline-block w-3 h-3 rounded bg-gray-400" />
-              <span>Buổi do thành viên khác đăng ký</span>
+              <span>Khoảng thời gian thành viên khác đã đặt</span>
             </div>
           </div>
         </div>
@@ -635,12 +598,15 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
                       if (!slot) {
                         bg = "bg-white";
                         textColor = "text-gray-300";
-                      } else if (slot.userId === _currentUserId) {
+                      } else if (
+                        slot.userId === _currentUserId ||
+                        slot.userName === _currentUserName // ⭐ nhận diện luôn slot của bạn
+                      ) {
                         bg = `${colorForUser(_currentUserId)} text-white`;
                         textColor = "text-white";
                         borderExtra = "border border-white/60";
                       } else {
-                        bg = "bg-gray-200 text-gray-700";
+                        bg = "bg-gray-200";
                         textColor = "text-gray-800";
                       }
 
@@ -659,18 +625,14 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
                                 </span>
                                 <span
                                   className={`truncate text-[11px] ${
-                                    slot.userId === _currentUserId
+                                    slot.userId === _currentUserId ||
+                                    slot.userName === _currentUserName
                                       ? "text-white/90"
                                       : "text-gray-700"
                                   }`}
                                 >
                                   {slot.vehicle}
                                 </span>
-                                {slot.purpose && (
-                                  <span className="mt-0.5 text-[10px] text-gray-700/80 line-clamp-1">
-                                    {slot.purpose}
-                                  </span>
-                                )}
                               </>
                             ) : (
                               <span className="text-gray-300">Trống</span>
@@ -686,8 +648,8 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({
           </div>
 
           <p className="mt-3 text-xs text-gray-500">
-            Lịch này chỉ dùng để xem. Để đăng ký buổi mới, hãy dùng nút{" "}
-            <span className="font-semibold">"Đăng ký buổi mới"</span> phía trên.
+            Lịch này dùng để xem nhanh các buổi Sáng / Chiều đã có đặt xe, dựa
+            trên giờ bắt đầu của từng booking.
           </p>
         </div>
       </div>

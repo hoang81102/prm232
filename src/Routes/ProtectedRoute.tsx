@@ -1,34 +1,32 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { getUserInfo, isAuthenticated } from "../api/authApi";
-import type { UserInfo } from "../api/authApi";
+import { getUserInfo } from "../api/authApi"; // chỉnh path nếu khác
 
-type Role = UserInfo["role"];
+type Role = "Admin" | "Staff" | "CoOwner";
 
 interface ProtectedRouteProps {
-  allowedRoles?: Role[];
-  children: React.ReactNode; // 👈 FIX HERE
+  allowedRoles: Role[];
+  children: React.ReactElement;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   children,
 }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-
   const user = getUserInfo();
 
+  // Chưa đăng nhập → về login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/forbidden" replace />;
+  // Sai role → sang Permission
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/permission" replace />;
   }
 
-  return <>{children}</>;
+  // Đúng role → cho vào
+  return children;
 };
 
 export default ProtectedRoute;

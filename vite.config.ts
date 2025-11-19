@@ -1,37 +1,46 @@
 // vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc"; // hoặc '@vitejs/plugin-react'
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5173, // đúng port bạn đang chạy
+    port: 5173,
     proxy: {
-      "/auth": {
-        target: "http://localhost:5000", // BE thật
+      // 🔹 Auth service qua Gateway
+      '/auth': {
+        target: 'http://localhost:5000', // chỗ có swagger
         changeOrigin: true,
-        secure: false, // vì HTTPS local, cert tự ký
+        secure: false,
       },
-      "/vehicles": {
-        target: "http://localhost:5000", // BE thật
+
+      // 🔹 Vehicle
+      '/vehicles': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false, // vì HTTPS local, cert tự ký
+        secure: false,
       },
-      "/bookings": {
-        target: "http://localhost:5000", // BE thật
+
+      // 🔹 Booking
+      '/bookings': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false, // vì HTTPS local, cert tự ký
+        secure: false,
       },
-      "/finance": {
-        target: "http://localhost:5000", // BE thật
+
+      // 🔹 Groups / Contracts / Votes / Disputes
+      '/groups': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false, // vì HTTPS local, cert tự ký
+        secure: false,
       },
-      "/groups": {
-        target: "http://localhost:5000", // BE thật
+
+      // 🔹 Finance
+      '/finance': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false, // vì HTTPS local, cert tự ký
+        secure: false,
       },
     },
   },

@@ -16,17 +16,22 @@ export interface ApiResponse<T> {
   [key: string]: any;
 }
 
-// BE trả về:
-// {
-//   "accessToken": "...",
-//   "refreshToken": "...",
-//   "role": "co-owner"
-// }
-type LoginResponse = {
+// ====== LOGIN RESPONSE THỰC TẾ TỪ BE ======
+type LoginData = {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string | null;
   role: string; // co-owner, admin, staff ...
+  [key: string]: any; // userId, phoneNumber,...
 };
+
+type LoginResponse = {
+  success: boolean;
+  errorCode?: string | null;
+  message?: string;
+  data: LoginData;
+};
+
+// =========================================
 
 type RegisterPayload = {
   phoneNumber: string;
@@ -88,30 +93,35 @@ export const loginUser = async (
   | { success: false; message: string }
 > => {
   try {
-    // axiosClient đã trả luôn response.data,
-    // ở đây chính là object { accessToken, refreshToken, role }
+    // Gọi đúng Gateway Endpoint: /auth/api/Auth/login
     const res = (await axiosClient.post(
-      "/auth/login",
+      "/auth/api/Auth/login",
       { phoneNumber, password },
       { skipAuth: true }
     )) as LoginResponse;
 
     console.log("Login response from server:", res);
 
-    const token = res.accessToken;
+    // accessToken nằm trong res.data
+    const loginData = res.data ?? (res as any);
+    const token = loginData.accessToken;
 
     if (!token) {
       toast.error("No token received.");
       return { success: false, message: "No token received." };
     }
 
-    // Lưu token + refresh token
+    // Lưu token + refresh token (nếu có)
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+    if (loginData.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, loginData.refreshToken);
+    }
 
     // Giải mã token
     const decoded = jwtDecode<DecodedToken>(token);
-    const normalizedRole = mapBackendRoleToFrontend(decoded.role ?? res.role);
+    const normalizedRole = mapBackendRoleToFrontend(
+      decoded.role ?? loginData.role
+    );
 
     const userInfo: UserInfo = {
       ...decoded,
@@ -120,7 +130,7 @@ export const loginUser = async (
 
     localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
 
-    toast.success("Login successful!");
+    toast.success(res.message || "Login successful!");
     return { success: true, token, user: userInfo };
   } catch (err) {
     const error = err as AxiosError<any>;
@@ -136,35 +146,48 @@ export const loginUser = async (
 // =========================
 // ✅ REGISTER
 // =========================
+type RegisterResponse = {
+  message?: string;
+  data?: any;
+  [key: string]: any;
+};
+
 export const registerUser = async (
   payload: RegisterPayload
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
-    const rawResponse = await axiosClient.post("/auth/register", payload, {
+    // Gọi đúng Gateway Endpoint: /auth/api/Auth/register
+    const res = (await axiosClient.post("/auth/api/Auth/register", payload, {
       skipAuth: true,
-    });
+    })) as RegisterResponse;
 
-    const response = rawResponse as ApiResponse<any>;
+    console.log("Register response from server:", res);
 
-    toast.success("Register successful!");
-    return { success: true, data: response.data };
+    const data = res.data ?? res;
+    const msg = res.message ?? "Register successful!";
+
+    toast.success(msg);
+    return { success: true, data, message: msg };
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("REGISTER ERROR", error.response);
+
     const msg = (error.response?.data as any)?.message || "Register failed!";
     toast.error(msg);
+
     return { success: false, message: msg };
   }
 };
 
 // =========================
 // ✅ GET ME
+// (giả định Gateway có endpoint /auth/api/Auth/me)
 // =========================
 export const fetchMe = async (): Promise<any> => {
   try {
-    const rawResponse = await axiosClient.get("/auth/me");
-    const response = rawResponse as ApiResponse<any>;
-    return response.data;
+    const res = await axiosClient.get("/auth/api/Auth/me");
+    console.log("ME RESPONSE", res);
+    return res;
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("FETCH ME ERROR", error.response);
@@ -176,13 +199,13 @@ export const fetchMe = async (): Promise<any> => {
 };
 
 // =========================
-/** ✅ UPDATE ME */
+// ✅ UPDATE ME
 // =========================
 export const updateProfile = async (
   payload: UpdateProfilePayload
 ): Promise<any> => {
   try {
-    const rawResponse = await axiosClient.patch("/auth/me", payload);
+    const rawResponse = await axiosClient.patch("/auth/api/Auth/me", payload);
     const response = rawResponse as ApiResponse<any>;
 
     toast.success("Profile updated successfully!");
@@ -204,11 +227,12 @@ export const updateProfile = async (
 
 // =========================
 // ✅ LOGOUT
+// (giả định Gateway có endpoint /auth/api/Auth/logout)
 // =========================
 export const logout = async (refreshToken?: string): Promise<void> => {
   try {
     if (refreshToken) {
-      await axiosClient.post("/auth/logout", null, {
+      await axiosClient.post("/auth/api/Auth/logout", null, {
         params: { refreshToken },
       });
     }
