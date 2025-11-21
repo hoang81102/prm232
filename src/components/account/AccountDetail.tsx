@@ -6,7 +6,7 @@ import {
 } from "../ui/dialog";
 import { AccountStatusBadge } from "./AccountStatusBadge";
 import { Separator } from "../ui/separator";
-import type { Account, AccountDetail } from "../../types/account";
+import type { Account } from "../../types/account";
 
 interface AccountDetailsDialogProps {
   account: Account | null;
@@ -36,7 +36,7 @@ export const AccountrDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white max-w-4xl! w-full max-h-[80vh] overflow-y-auto">
+      <DialogContent className="bg-white max-w-3xl! w-full max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl text-slate-800">Vehicle Details</DialogTitle>
         </DialogHeader>
@@ -45,52 +45,32 @@ export const AccountrDetailsDialog = ({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold text-orange-400 ">
-                {account.accountId
-                  ? `${account.accountId}`
+                {account.userId
+                  ? `${account.userId}`
                   : "N/A"}
               </h3>
             
             </div>
-            <AccountStatusBadge status={account.status} />
+            <AccountStatusBadge status={account.isActive} />
           </div>
 
           <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className=" gap-4">
             <div className="space-y-1">
-              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Basic Information</h4>
-              <DetailRow label="First Name" value={account.firstName} />
-              <DetailRow label="Last Name" value={account.lastName} />
-              <DetailRow label="Date of birth" value={account.dob} />
+              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Thông tin cơ bản</h4>
+              <DetailRow label="Họ" value={account.firstName} />
+              <DetailRow label="Tên" value={account.lastName} />
+              <DetailRow label="Vai trò" value={account.roleName} />
             </div>
 
             <div className="space-y-1">
-              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Additional Information</h4>
-              <DetailRow
-                label="Gender"
-                value={
-                  account.gender
-                }
-              />
-              <DetailRow
-                label="Role"
-                value={account.role}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Contact Information</h4>
-              <DetailRow label="Phone" value={account.phone} />
+              <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Thông tin liên hệ</h4>
+              <DetailRow label="Phone" value={account.phoneNumber} />
               <DetailRow
                 label="Email"
                 value={
                 account.email
-                }
-              />
-              <DetailRow
-                label="Address"
-                value={
-                account.address
                 }
               />
             </div>

@@ -16,15 +16,15 @@ import { Button } from "../components/ui/button";
 import { VehicleTable } from "../components/vehicle/VehicleTable";
 import { VehicleDetailsDialog } from "../components/vehicle/VehicleDetail";
 import { VehicleFormDialog } from "../components/vehicle/VehicleDetailFormDialog";
-import { addVehicle, deleteVehicle, getVehicle, getVehicles } from "../api/vehicleApi";
+import { addVehicle, deleteVehicle, getVehicleById, getVehicles, type VehicleSchema } from "../api/vehicleApi";
 
 const Vehicles = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [vehicles, setVehicles] = useState<VehicleSchema[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleSchema | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<VehicleSchema | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fetchVehicles = async () => {
@@ -48,9 +48,9 @@ const Vehicles = () => {
   }, []);
 
 
-  const handleView = async (vehicle: Vehicle) => {
+  const handleView = async (vehicle: VehicleSchema) => {
      try {
-      const res = await getVehicle(vehicle.vehicleId);
+      const res = await getVehicleById(vehicle.vehicleId);
       if (!res) throw new Error("Failed to load vehicle details");
       setSelectedVehicle(res);
       setViewDialogOpen(true);
@@ -59,14 +59,16 @@ const Vehicles = () => {
     }
   };
 
-  const handleEdit = (vehicle: Vehicle) => {
+  const handleEdit = (vehicle: VehicleSchema) => {
     setSelectedVehicle(vehicle);
-    setFormDialogOpen(true);
+    toast.error("Chức năng đang phát triển");
+    // setFormDialogOpen(true);
   };
 
-  const handleDelete = (vehicle: Vehicle) => {
+  const handleDelete = (vehicle: VehicleSchema) => {
     setVehicleToDelete(vehicle);
-    setDeleteDialogOpen(true);
+    toast.error("Chức năng đang phát triển");
+    // setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {

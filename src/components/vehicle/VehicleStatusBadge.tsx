@@ -2,18 +2,18 @@ import { Badge } from "../ui/badge";
 
 
 interface VehicleStatusBadgeProps {
-  status: number;
+  status: string;
 }
 
 export const VehicleStatusBadge = ({ status }: VehicleStatusBadgeProps) => {
   const getStatusConfig = () => {
     switch (status) {
-      case 0:
-        return { label: "Maintenance", variant: "destructive" as const };
-      case 1:
-        return { label: "Active", variant: "default" as const };
-      case 2:
-        return { label: "Inactive", variant: "secondary" as const };
+      case "Inactive":
+        return { label: "Dừng hoạt động", variant: "destructive" as const };
+      case 'Active':
+        return { label: "Đang hoạt động", variant: "default" as const };
+      case 'Maintenance':
+        return { label: "Đang bảo dưỡng", variant: "warning" as const };
       default:
         return { label: "Unknown", variant: "secondary" as const };
     }

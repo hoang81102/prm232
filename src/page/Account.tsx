@@ -26,56 +26,14 @@ import {
 import { AccountTable } from "../components/account/AccountTable";
 import { AccountrDetailsDialog } from "../components/account/AccountDetail";
 import { AccountFormDialog } from "../components/account/AccountDetailFormDialog";
-import { getAccount, getAccounts } from "../api/authApi";
+import {
+  createAccount,
+  deleteAccount,
+  getAccount,
+  getAccounts,
+  updateAccount,
+} from "../api/authApi";
 
-export const mockAccounts: Account[] = [
-  {
-    u: 1,
-    email: "nguyen.anh@example.com",
-    phone: "0901234567",
-    role: "RESIDENT",
-    address: "Tầng 5, Block A, Khu chung cư Sunshine",
-    status: AccountStatus.Active,
-  },
-  {
-    accountId: 2,
-    email: "tran.hoa@example.com",
-    phone: "0912345678",
-    role: "MANAGER",
-    address: "Phòng 302, Khu B, Green Park",
-    status: AccountStatus.Inactive,
-  },
-  {
-    accountId: 3,
-    email: null,
-    phone: "0987654321",
-    role: "GUARD",
-    address: null,
-    status: AccountStatus.Active,
-  },
-  {
-    accountId: 4,
-    email: "le.tuan@example.com",
-    phone: "0978123456",
-    role: "ADMIN",
-    address: "12 Nguyễn Văn Cừ, Q.5, TP.HCM",
-    status: AccountStatus.Active,
-  },
-];
-
-export const mockAccountDetail: AccountDetail = {
-  accountId: 2,
-  email: "tran.hoa@example.com",
-  phoneNumber: "0912345678",
-  password: "hashed_password_example",
-  role: "MANAGER",
-  address: "Phòng 302, Khu B, Green Park",
-  status: AccountStatus.Inactive,
-  firstName: "Hòa",
-  lastName: "Trần",
-  gender: "Female",
-  dateOfBirth: "1990-05-12",
-};
 const UsersManagement = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -129,11 +87,13 @@ const UsersManagement = () => {
   const confirmDelete = async () => {
     if (!accountToDelete) return;
     try {
-      const res = await deleteVehicle(accountToDelete.accountId);
+      const res = await deleteAccount(accountToDelete.userId);
       if (!res) throw new Error("Failed to delete vehicle");
-      toast.success(`Vehicle ${accountToDelete.phone} deleted successfully`);
+      toast.success(
+        `Vehicle ${accountToDelete.phoneNumber} deleted successfully`
+      );
       setAccounts((prev) =>
-        prev.filter((v) => v.accountId !== accountToDelete.accountId)
+        prev.filter((v) => v.userId !== accountToDelete.userId)
       );
     } catch (error: any) {
       toast.error(error.message);
@@ -144,23 +104,21 @@ const UsersManagement = () => {
   };
 
   const handleAdd = () => {
-    selectedAccount(null);
+    setSelectedAccount(null);
     setFormDialogOpen(true);
   };
 
   const handleFormSubmit = async (data: any) => {
     if (selectedAccount) {
-      setAccounts(
-        accounts.map((v) =>
-          v.accountId === selectedAccount.accountId
-            ? { ...data, vehicleId: selectedAccount.accountId }
-            : v
-        )
+      const res = await updateAccount(selectedAccount.userId, data);
+
+      const updated = await getAccount(selectedAccount.userId); // fetch lại toàn bộ dữ liệu
+      setAccounts((prev) =>
+        prev.map((v) => (v.userId === selectedAccount.userId ? updated : v))
       );
       toast.success(`Vehicle ${data.licensePlate} updated successfully`);
     } else {
-      // Add new vehicle
-      const res = await addVehicle(data);
+      const res = await createAccount(data);
       if (!res) throw new Error("Failed to delete account");
       setAccounts([...accounts, res]);
       toast.success(`Account ${data.licensePlate} added successfully`);
@@ -209,8 +167,10 @@ const UsersManagement = () => {
               <AlertDialogTitle>Bạn có chắc không?</AlertDialogTitle>
               <AlertDialogDescription>
                 Nó sẽ bị xóa{" "}
-                <span className="font-semibold">{accountToDelete?.phone}</span>.
-                Hành động này không thể hoàn tác.
+                <span className="font-semibold">
+                  {accountToDelete?.phoneNumber}
+                </span>
+                . Hành động này không thể hoàn tác.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

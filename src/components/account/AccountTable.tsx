@@ -101,9 +101,9 @@ export const AccountTable = ({
                   <TableCell className="font-mono text-sm">
                     {account.email || "N/A"}
                   </TableCell>
-                  <TableCell>{account.status || "N/A"}</TableCell>
+                  <TableCell>{account.roleName || "N/A"}</TableCell>
                   <TableCell>
-                    <AccountStatusBadge status={account.status} />
+                    <AccountStatusBadge status={account.isActive} />
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

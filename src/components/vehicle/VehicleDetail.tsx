@@ -6,10 +6,10 @@ import {
 } from "../../components/ui/dialog";
 import { VehicleStatusBadge } from "./VehicleStatusBadge";
 import { Separator } from "../../components/ui/separator";
-import type { Vehicle } from "../../types/vehicle";
+import type { VehicleSchema } from "../../api/vehicleApi";
 
 interface VehicleDetailsDialogProps {
-  vehicle: Vehicle | null;
+  vehicle: VehicleSchema | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -60,7 +60,7 @@ export const VehicleDetailsDialog = ({
             <div className="space-y-1">
               <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Basic Information</h4>
               <DetailRow label="VIN" value={vehicle.vin} />
-              <DetailRow label="Year" value={vehicle.year} />
+              {/* <DetailRow label="Year" value={vehicle.year} /> */}
               <DetailRow label="Color" value={vehicle.color} />
             </div>
 
@@ -74,13 +74,13 @@ export const VehicleDetailsDialog = ({
                     : null
                 }
               />
-              <DetailRow
+              {/* <DetailRow
                 label="Charging Port"
                 value={vehicle.chargingPortType}
-              />
+              /> */}
             </div>
 
-            <div className="space-y-1">
+            {/* <div className="space-y-1">
               <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">Purchase Information</h4>
               <DetailRow label="Purchase Date" value={vehicle.purchaseDate} />
               <DetailRow
@@ -91,11 +91,11 @@ export const VehicleDetailsDialog = ({
                     : null
                 }
               />
-            </div>
+            </div> */}
 
             <div className="space-y-1">
               <h4 className="font-semibold mb-2 bg-gray-200 rounded pl-2">References</h4>
-              <DetailRow label="Contract ID" value={vehicle.contractId} />
+              {/* <DetailRow label="Contract ID" value={vehicle.contractId} /> */}
               <DetailRow
                 label="Co-Owner Group ID"
                 value={vehicle.coOwnerGroupId}

@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import type { AxiosError } from "axios";
 import type { Account } from "../types/account";
 import type { ApiResponseDetail } from "./vehicleApi";
+import type { AccountFormValues } from "../components/account/AccountForm";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -314,9 +315,9 @@ export const getAccount = async (accountId: number): Promise<Account> => {
   }
 };
 
-export const createAccounts = async (): Promise<Account> => {
+export const createAccount = async (accountReggister: AccountFormValues): Promise<Account> => {
   try {
-    const rawResponse = await axiosClient.post(`/auth/api/admin/users`);
+    const rawResponse = await axiosClient.post(`/auth/api/admin/users`, accountReggister);
     const response = rawResponse as ApiResponseDetail<Account>;
     return response.data;
   } catch (err) {
@@ -324,6 +325,36 @@ export const createAccounts = async (): Promise<Account> => {
     console.error("ADD ACCOUNTS ERROR", error.response);
     const msg =
       (error.response?.data as any)?.message || "Failed to add accounts!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+export const updateAccount = async (userId: number, accountUpdate: Account): Promise<Account> => {
+  try {
+    const rawResponse = await axiosClient.put(`/auth/api/admin/users/${userId}`, accountUpdate);
+    const response = rawResponse as ApiResponseDetail<Account>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("UPDATE ACCOUNTS ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to update accounts!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+export const deleteAccount = async (userId: number): Promise<Account> => {
+  try {
+    const rawResponse = await axiosClient.delete(`/auth/api/admin/users/${userId}`);
+    const response = rawResponse as ApiResponseDetail<Account>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("DELETE ACCOUNTS ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to delete accounts!";
     toast.error(msg);
     throw err;
   }

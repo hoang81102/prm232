@@ -13,7 +13,6 @@ import ApplicationFormManagement from "./components/ApplicationFormManagement";
 import UserManagement from "./components/Admin/UserManagement";
 import UserDetails from "./components/Admin/UserDetails";
 import GroupManagement from "./components/Admin/GroupManagement";
-import GroupDetails from "./components/Admin/GroupDetails";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 
 import UserLayout from "./layout/CoOwnerLayout";
@@ -52,16 +51,16 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute allowedRoles={["Admin"]}>
-              <AdminLayout />
-            </ProtectedRoute>
+            // <ProtectedRoute allowedRoles={["Admin"]}>
+            //   <AdminLayout />
+            // </ProtectedRoute>
+            <AdminLayout />
           }
         >
           {/* các path con KHÔNG cần /admin ở trước */}
           <Route path="usersmanagement" element={<UsersManagement />} />
           <Route path="usermanagement/:id" element={<UserDetails />} />
           <Route path="groups" element={<GroupManagement />} />
-          <Route path="groups/:id" element={<GroupDetails />} />
           <Route path="vehicles" element={<Vehicles />} />
           <Route path="dashboard" element={<AdminDashboard />} />
         </Route>

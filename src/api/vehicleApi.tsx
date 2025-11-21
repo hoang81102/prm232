@@ -5,6 +5,18 @@ import { toast } from "react-toastify";
 import type { Vehicle } from "../types/vehicle";
 import type { VehicleFormValues } from "../components/vehicle/VehicleForm";
 
+
+export interface VehicleSchema {
+  vehicleId: number;
+    licensePlate: string;
+    vin: string;
+    make: string | null;
+    model: string | null;
+    color: string | null;
+    batteryCapacityKwh: number | null;
+    coOwnerGroupId: number | null;
+    status: string;
+  }
 export interface ApiResponseDetail<T> {
   data: T;
   message?: string;
@@ -28,10 +40,10 @@ export const getVehiclesByGroup = async (groupId: number): Promise<Vehicle[]> =>
   }
 };
 
-export const getVehicles = async (): Promise<Vehicle[]> => {
+export const getVehicles = async (): Promise<VehicleSchema[]> => {
   try {
     const rawResponse = await axiosClient.get(`/vehicles/api/Vehicles`);
-    const response = rawResponse as ApiResponseDetail<Vehicle[]>;
+    const response = rawResponse as ApiResponseDetail<VehicleSchema[]>;
     return response.data;
   } catch (err) {
     const error = err as AxiosError<any>;
@@ -43,10 +55,10 @@ export const getVehicles = async (): Promise<Vehicle[]> => {
   }
 };
 
-export const getVehicle = async (vehicleId: number): Promise<Vehicle> => {
+export const getVehicleById = async (vehicleId: number): Promise<VehicleSchema> => {
   try {
     const rawResponse = await axiosClient.get(`/vehicles/api/Vehicles/${vehicleId}`);
-    const response = rawResponse as ApiResponseDetail<Vehicle>;
+    const response = rawResponse as ApiResponseDetail<VehicleSchema>;
     return response.data;
   } catch (err) {
     const error = err as AxiosError<any>;
@@ -58,10 +70,10 @@ export const getVehicle = async (vehicleId: number): Promise<Vehicle> => {
   }
 };
 
-export const deleteVehicle = async (vehicleId: number): Promise<Vehicle> => {
+export const deleteVehicle = async (vehicleId: number): Promise<VehicleSchema> => {
   try {
     const rawResponse = await axiosClient.delete(`/vehicles/api/Vehicles/${vehicleId}`);
-    const response = rawResponse as ApiResponseDetail<Vehicle>;
+    const response = rawResponse as ApiResponseDetail<VehicleSchema>;
     return response.data;
   } catch (err) {
     const error = err as AxiosError<any>;
@@ -73,10 +85,10 @@ export const deleteVehicle = async (vehicleId: number): Promise<Vehicle> => {
   }
 };
 
-export const addVehicle = async (vehicle: VehicleFormValues): Promise<Vehicle> => {
+export const addVehicle = async (vehicle: VehicleFormValues): Promise<VehicleSchema> => {
   try {
     const rawResponse = await axiosClient.post(`/vehicles/api/Vehicles`, vehicle);
-    const response = rawResponse as ApiResponseDetail<Vehicle>;
+    const response = rawResponse as ApiResponseDetail<VehicleSchema>;
     return response.data;
   } catch (err) {
     const error = err as AxiosError<any>;

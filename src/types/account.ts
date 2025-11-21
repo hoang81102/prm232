@@ -5,7 +5,7 @@ export interface Account {
   roleName: string;
   firstName: string | null;
   lastName: string | null;
-  status: AccountStatus;
+  isActive: AccountStatus;
 }
 
 export interface AccountDetail {
@@ -23,8 +23,8 @@ export interface AccountDetail {
 }
 
 export const AccountStatus = {
-  Inactive: 0,
-  Active: 1,
+  Inactive: false,
+  Active: true,
 } as const;
 
 export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];

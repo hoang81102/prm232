@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { Button } from "../ui/button";
-import { z } from "zod";
+import { string, z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -18,17 +18,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Select } from "../ui/select";
-import type { Account, AccountDetail } from "../../types/account";
-
-const accountFormSchema = z.object({
-  phoneNumber: z.string().min(10, "Phone number must be 10 characters").max(11),
-  password: z.string().min(8, "Password must be 17 characters").max(50),
-  firstName: z.string().max(255).optional(),
-  lastName: z.string().max(255).optional(),
-  roleId: z.number().optional(),
-});
-
-export type AccountFormValues = z.infer<typeof accountFormSchema>;
+import type { Account } from "../../types/account";
 
 interface AccountFormProps {
   account: Account | null;
@@ -36,85 +26,82 @@ interface AccountFormProps {
   onCancel: () => void;
 }
 
+const phoneRegex = /((09|03|07|08|05)+([0-9]{8})\b)/g;
+
+// Factory function tạo schema dựa vào việc có account hay không
+const getAccountFormSchema = (isEdit: boolean) =>
+  isEdit
+    ? z.object({
+        email: z.string().email("Email không hợp lệ"),
+        firstName: z.string().trim().min(1, "Họ (First Name) là bắt buộc"),
+        lastName: z.string().trim().min(1, "Tên (Last Name) là bắt buộc"),
+        roleId: z.number().int().positive("Role ID phải là số dương"),
+      })
+    : z.object({
+        phoneNumber: z
+          .string()
+          .min(1, "Số điện thoại không được để trống")
+          .regex(phoneRegex, "Số điện thoại không hợp lệ (VD: 09...)"),
+        password: z.string().min(6, "Mật khẩu từ 6 ký tự trở lên"),
+        firstName: z.string().trim().min(1, "Họ (First Name) là bắt buộc"),
+        lastName: z.string().trim().min(1, "Tên (Last Name) là bắt buộc"),
+        roleId: z.number().int().positive("Role ID phải là số dương"),
+      });
+
+export type AccountFormValues = z.infer<
+  ReturnType<typeof getAccountFormSchema>
+>;
+
+export const roleStringToNumber = (role: string): number => {
+  switch (role.toLowerCase()) {
+    case "admin":
+      return 1;
+    case "staff":
+      return 2;
+    case "coowner":
+      return 3;
+    default:
+      return 0; // hoặc ném lỗi nếu muốn
+  }
+};
+
 export const AccountForm = ({
   account,
   onSubmit,
   onCancel,
 }: AccountFormProps) => {
-  const mapAccountToFormValues = (v: Account): AccountFormValues => ({
-    phoneNumber: v.phoneNumber,
-    password: "",
-    firstName: v.firstName ?? "",
-    lastName: v.lastName ?? "",
-    roleId: v.status ?? 1,
-  });
-
+  const isEdit = !!account;
   const form = useForm<AccountFormValues>({
-    resolver: zodResolver(accountFormSchema) as any,
-    defaultValues: account
-      ? mapAccountToFormValues(account)
+    resolver: zodResolver(getAccountFormSchema(isEdit)),
+    defaultValues: isEdit
+      ? {
+          email: account?.email ?? "",
+          firstName: account?.firstName ?? "",
+          lastName: account?.lastName ?? "",
+          roleId: roleStringToNumber(account.roleName),
+        }
       : {
           phoneNumber: "",
           password: "",
           firstName: "",
           lastName: "",
-          roleId: 1,
+          roleId: 0,
         },
   });
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Số điện thoại <span className="text-red-500">*</span>{" "}
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="0933880434" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Mật Khẩu <span className="text-red-500">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="**********"
-                    maxLength={17}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Họ</FormLabel>
+                <FormLabel>
+                  Họ <span className="text-red-500">*</span>{" "}
+                </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Ly"
-                    {...field}
-                    value={field.value || ""}
-                  />
+                  <Input placeholder="Ly" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -126,18 +113,62 @@ export const AccountForm = ({
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tên</FormLabel>
+                <FormLabel>
+                  Tên <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Luan"
-                    {...field}
-                    value={field.value || ""}
-                  />
+                  <Input placeholder="Luan" maxLength={17} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {isEdit ? (
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="abc@gmail.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : (
+            <>
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Số điện thoại</FormLabel>
+                    <FormControl>
+                      <Input placeholder="09xxxxxxx" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mật khẩu</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
 
           <FormField
             control={form.control}
@@ -146,12 +177,12 @@ export const AccountForm = ({
               <FormItem>
                 <FormLabel>Vai trò</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
-                  value={field.value ? String(field.value) : undefined}
+                  onValueChange={(value) => field.onChange(Number(value))}
+                  value={field.value ? String(field.value) : ""}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Chọn role" />
+                      <SelectValue placeholder="Chọn vai trò" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent className="bg-white">
@@ -178,10 +209,10 @@ export const AccountForm = ({
             className="bg-non hover:bg-slate-300"
             onClick={onCancel}
           >
-            Hủy
+            Cancel
           </Button>
           <Button type="submit">
-            {account ? "Cập nhật tài khoản" : "Thêm tài khoản"}
+            {account ? "Update Account" : "Add Account"}
           </Button>
         </div>
       </form>
