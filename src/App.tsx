@@ -33,6 +33,8 @@ import CoOwnerCost from "./components/CoOwner/CoOwnerCost";
 import CoOwnerVote from "./components/CoOwner/CoOwnerVote";
 import CoOwnerGroupPage from "./components/CoOwner/CoOwnerGroupPage";
 import Vehicles from "./page/Vehicles";
+import AccountManagement from "./page/Account";
+import UsersManagement from "./page/Account";
 
 function App() {
   return (
@@ -50,14 +52,13 @@ function App() {
         <Route
           path="/admin"
           element={
-            // <ProtectedRoute allowedRoles={["Admin"]}>
-            //   <AdminLayout />
-            // </ProtectedRoute>
-            <AdminLayout />
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminLayout />
+            </ProtectedRoute>
           }
         >
           {/* các path con KHÔNG cần /admin ở trước */}
-          <Route path="usermanagement" element={<UserManagement />} />
+          <Route path="usersmanagement" element={<UsersManagement />} />
           <Route path="usermanagement/:id" element={<UserDetails />} />
           <Route path="groups" element={<GroupManagement />} />
           <Route path="groups/:id" element={<GroupDetails />} />

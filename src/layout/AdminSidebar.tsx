@@ -46,10 +46,10 @@ const AdminSideBar: React.FC = () => {
       hasDropdown: false,
     },
     {
-      id: "users",
+      id: "usersmanagement",
       title: "Quản lí tài khoản",
       icon: <User />,
-      path: "/admin/usermanagement",
+      path: "/admin/usersmanagement",
       hasDropdown: false,
     },
     {

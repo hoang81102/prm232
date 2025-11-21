@@ -1,24 +1,25 @@
-
 export interface Account {
-  accountId: number;
+  userId: number;
   email: string | null;
-  phone: string;
-  role: string;
-  address: string | null;
+  phoneNumber: string;
+  roleName: string;
+  firstName: string | null;
+  lastName: string | null;
   status: AccountStatus;
 }
 
 export interface AccountDetail {
   accountId: number;
   email: string | null;
-  phone: string;
+  phoneNumber: string;
+  password: string;
   role: string;
   address: string | null;
   status: AccountStatus;
   firstName: string | null;
   lastName: string | null;
   gender: string | null;
-  dob: string | null;
+  dateOfBirth: string | null;
 }
 
 export const AccountStatus = {
@@ -26,4 +27,4 @@ export const AccountStatus = {
   Active: 1,
 } as const;
 
-export type AccountStatus = typeof AccountStatus[keyof typeof AccountStatus];
+export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];

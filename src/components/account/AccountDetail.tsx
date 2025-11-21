@@ -6,10 +6,10 @@ import {
 } from "../ui/dialog";
 import { AccountStatusBadge } from "./AccountStatusBadge";
 import { Separator } from "../ui/separator";
-import type { AccountDetail } from "../../types/account";
+import type { Account, AccountDetail } from "../../types/account";
 
 interface AccountDetailsDialogProps {
-  account: AccountDetail | null;
+  account: Account | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

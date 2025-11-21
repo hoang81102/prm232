@@ -1,6 +1,4 @@
 import { useState } from "react";
-
-import { VehicleStatusBadge } from "./AccountStatusBadge";
 import { Eye, Pencil, Trash2, Search, MoreHorizontal, Pen } from "lucide-react";
 import { Input } from "../ui/input";
 import {
@@ -12,35 +10,43 @@ import {
   TableRow,
 } from "../ui/table";
 import { Button } from "../ui/button";
-import type { Vehicle } from "../../types/vehicle";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import type { Account } from "../../types/account";
+import { AccountStatusBadge } from "./AccountStatusBadge";
 
-interface VehicleTableProps {
-  vehicles: Vehicle[];
-  onView: (vehicle: Vehicle) => void;
-  onEdit: (vehicle: Vehicle) => void;
-  onDelete: (vehicle: Vehicle) => void;
+interface AccountTableProps {
+  accounts: Account[];
+  onView: (account: Account) => void;
+  onEdit: (account: Account) => void;
+  onDelete: (account: Account) => void;
 }
 
-export const VehicleTable = ({
-  vehicles,
+export const AccountTable = ({
+  accounts,
   onView,
   onEdit,
   onDelete,
-}: VehicleTableProps) => {
+}: AccountTableProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredVehicles = vehicles.filter(
-    (vehicle) =>
-      vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.vin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredaccounts = accounts.filter(
+    (account) =>
+      (account.email ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (account.phoneNumber ?? "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (account.roleName ?? "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (account.firstName ?? "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (account.lastName ?? "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -49,7 +55,7 @@ export const VehicleTable = ({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
-            placeholder="Search by license plate, VIN, make, or model..."
+            placeholder="Search by email, phone, role name, address.."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9 text-gray-500"
@@ -61,43 +67,43 @@ export const VehicleTable = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-emerald-300">
-              <TableHead>License Plate</TableHead>
-              <TableHead>Make & Model</TableHead>
-              <TableHead>Year</TableHead>
-              <TableHead>VIN</TableHead>
-              <TableHead>Battery (kWh)</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Id</TableHead>
+              <TableHead>Tên tài khoản</TableHead>
+              <TableHead>Số điện thoại</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Vai trò</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-right">Hành động</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredVehicles.length === 0 ? (
+            {filteredaccounts.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={7}
                   className="text-center py-8 text-muted-foreground"
                 >
-                  No vehicles found
+                  Không tìm thấy tài khoản nào.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredVehicles.map((vehicle) => (
-                <TableRow key={vehicle.vehicleId} className="hover:bg-gray-200">
+              filteredaccounts.map((account) => (
+                <TableRow key={account.userId} className="hover:bg-gray-200">
                   <TableCell className="font-medium">
-                    {vehicle.licensePlate}
+                    {account.userId ? `${account.userId}` : "N/A"}
                   </TableCell>
                   <TableCell>
-                    {vehicle.make && vehicle.model
-                      ? `${vehicle.make} ${vehicle.model}`
+                    {account.firstName && account.lastName
+                      ? account.firstName + account.lastName
                       : "N/A"}
                   </TableCell>
-                  <TableCell>{vehicle.year || "N/A"}</TableCell>
+                  <TableCell>{account.phoneNumber || "N/A"}</TableCell>
                   <TableCell className="font-mono text-sm">
-                    {vehicle.vin}
+                    {account.email || "N/A"}
                   </TableCell>
-                  <TableCell>{vehicle.batteryCapacityKwh || "N/A"}</TableCell>
+                  <TableCell>{account.status || "N/A"}</TableCell>
                   <TableCell>
-                    <VehicleStatusBadge status={vehicle.status} />
+                    <AccountStatusBadge status={account.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -109,7 +115,7 @@ export const VehicleTable = ({
                       <DropdownMenuContent align="end" className="bg-white">
                         <DropdownMenuItem
                           onClick={() => {
-                            onView(vehicle);
+                            onView(account);
                           }}
                           className="hover:bg-emerald-300"
                         >
@@ -117,14 +123,14 @@ export const VehicleTable = ({
                           Xem chi tiết
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onEdit(vehicle)}
+                          onClick={() => onEdit(account)}
                           className="hover:bg-emerald-300"
                         >
                           <Pen className="mr-2 h-4 w-4" />
                           Chỉnh sửa
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onDelete(vehicle)}
+                          onClick={() => onDelete(account)}
                           className="text-red-500 hover:bg-red-500 hover:text-white"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />

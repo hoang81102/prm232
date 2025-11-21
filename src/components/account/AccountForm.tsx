@@ -17,75 +17,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { VehicleStatus, type Vehicle } from "../../types/vehicle";
 import { Select } from "../ui/select";
+import type { Account, AccountDetail } from "../../types/account";
 
-const vehicleFormSchema = z.object({
-  licensePlate: z.string().min(1, "License plate is required").max(255),
-  vin: z.string().min(17, "VIN must be 17 characters").max(17),
-  make: z.string().max(255).optional(),
-  model: z.string().max(255).optional(),
-  year: z.coerce
-    .number()
-    .min(2000, "Year must be between 2000 and 2100")
-    .max(2100)
-    .optional()
-    .nullable(),
-  color: z.string().max(255).optional(),
-  batteryCapacityKwh: z.coerce.number().positive().optional().nullable(),
-  chargingPortType: z.string().max(50).optional(),
-  purchaseDate: z.string().optional().nullable(),
-  purchasePrice: z.coerce.number().positive().optional().nullable(),
-  contractId: z.coerce.number().optional().nullable(),
-  status: z.nativeEnum(VehicleStatus),
+const accountFormSchema = z.object({
+  phoneNumber: z.string().min(10, "Phone number must be 10 characters").max(11),
+  password: z.string().min(8, "Password must be 17 characters").max(50),
+  firstName: z.string().max(255).optional(),
+  lastName: z.string().max(255).optional(),
+  roleId: z.number().optional(),
 });
 
-export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+export type AccountFormValues = z.infer<typeof accountFormSchema>;
 
-interface VehicleFormProps {
-  vehicle: Vehicle | null;
-  onSubmit: (data: VehicleFormValues) => void;
+interface AccountFormProps {
+  account: Account | null;
+  onSubmit: (data: AccountFormValues) => void;
   onCancel: () => void;
 }
 
-export const VehicleForm = ({
-  vehicle,
+export const AccountForm = ({
+  account,
   onSubmit,
   onCancel,
-}: VehicleFormProps) => {
-  const mapVehicleToFormValues = (v: Vehicle): VehicleFormValues => ({
-    licensePlate: v.licensePlate ?? "",
-    vin: v.vin ?? "",
-    make: v.make ?? undefined,
-    model: v.model ?? undefined,
-    year: v.year ?? new Date().getFullYear(),
-    color: v.color ?? undefined,
-    batteryCapacityKwh: v.batteryCapacityKwh ?? undefined,
-    chargingPortType: v.chargingPortType ?? "",
-    purchaseDate: v.purchaseDate ?? "",
-    purchasePrice: v.purchasePrice ?? undefined,
-    contractId: v.contractId ?? undefined,
-
-    status: v.status,
+}: AccountFormProps) => {
+  const mapAccountToFormValues = (v: Account): AccountFormValues => ({
+    phoneNumber: v.phoneNumber,
+    password: "",
+    firstName: v.firstName ?? "",
+    lastName: v.lastName ?? "",
+    roleId: v.status ?? 1,
   });
 
-  const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleFormSchema) as any,
-    defaultValues: vehicle
-      ? mapVehicleToFormValues(vehicle)
+  const form = useForm<AccountFormValues>({
+    resolver: zodResolver(accountFormSchema) as any,
+    defaultValues: account
+      ? mapAccountToFormValues(account)
       : {
-          licensePlate: "",
-          vin: "",
-          make: "",
-          model: "",
-          year: new Date().getFullYear(),
-          color: "",
-          batteryCapacityKwh: undefined,
-          chargingPortType: "",
-          purchaseDate: "",
-          purchasePrice: undefined,
-          contractId: undefined,
-          status: VehicleStatus.Active,
+          phoneNumber: "",
+          password: "",
+          firstName: "",
+          lastName: "",
+          roleId: 1,
         },
   });
 
@@ -95,12 +68,14 @@ export const VehicleForm = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="licensePlate"
+            name="phoneNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>License Plate <span className="text-red-500">*</span> </FormLabel>
+                <FormLabel>
+                  Số điện thoại <span className="text-red-500">*</span>{" "}
+                </FormLabel>
                 <FormControl>
-                  <Input placeholder="ABC-1234" {...field} />
+                  <Input placeholder="0933880434" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,13 +84,16 @@ export const VehicleForm = ({
 
           <FormField
             control={form.control}
-            name="vin"
+            name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>VIN <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>
+                  Mật Khẩu <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="1HGBH41JXMN109186"
+                    type="password"
+                    placeholder="**********"
                     maxLength={17}
                     {...field}
                   />
@@ -127,13 +105,13 @@ export const VehicleForm = ({
 
           <FormField
             control={form.control}
-            name="make"
+            name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Make</FormLabel>
+                <FormLabel>Họ</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Tesla"
+                    placeholder="Ly"
                     {...field}
                     value={field.value || ""}
                   />
@@ -145,13 +123,13 @@ export const VehicleForm = ({
 
           <FormField
             control={form.control}
-            name="model"
+            name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Model</FormLabel>
+                <FormLabel>Tên</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Model 3"
+                    placeholder="Luan"
                     {...field}
                     value={field.value || ""}
                   />
@@ -163,168 +141,31 @@ export const VehicleForm = ({
 
           <FormField
             control={form.control}
-            name="year"
+            name="roleId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Year</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="2024"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="color"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Color</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Pearl White"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="batteryCapacityKwh"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Battery Capacity (kWh)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="75.5"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="chargingPortType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Charging Port Type</FormLabel>
+                <FormLabel>Vai trò</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value || ""}
+                  value={field.value ? String(field.value) : undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select port type" />
+                      <SelectValue placeholder="Chọn role" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent className="bg-white">
-                    <SelectItem className="hover:bg-emerald-300" value="CCS2">CCS2</SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value="NACS">NACS</SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value="CHAdeMO">CHAdeMO</SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value="Type2">Type 2</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="purchaseDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Purchase Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} value={field.value || ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="purchasePrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Purchase Price</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="45000.00"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={String(field.value)}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-white">
-                    <SelectItem className="hover:bg-emerald-300" value={String(VehicleStatus.Active)}>
-                      Active
+                    <SelectItem className="hover:bg-emerald-300" value="1">
+                      Admin
                     </SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value={String(VehicleStatus.Inactive)}>
-                      Inactive
+                    <SelectItem className="hover:bg-emerald-300" value="2">
+                      Staff
                     </SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value={String(VehicleStatus.Maintenance)}>
-                      Maintenance
+                    <SelectItem className="hover:bg-emerald-300" value="3">
+                      CoOwner
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="contractId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ContractId</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -332,11 +173,15 @@ export const VehicleForm = ({
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" className="bg-non hover:bg-slate-300" onClick={onCancel}>
-            Cancel
+          <Button
+            type="button"
+            className="bg-non hover:bg-slate-300"
+            onClick={onCancel}
+          >
+            Hủy
           </Button>
           <Button type="submit">
-            {vehicle ? "Update Vehicle" : "Add Vehicle"}
+            {account ? "Cập nhật tài khoản" : "Thêm tài khoản"}
           </Button>
         </div>
       </form>

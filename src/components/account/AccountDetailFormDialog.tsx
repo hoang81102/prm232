@@ -1,15 +1,10 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import type { Vehicle } from "../../types/vehicle";
-import { VehicleForm } from "./AccountForm";
+import { AccountForm, VehicleForm } from "./AccountForm";
 import type { Account, AccountDetail } from "../../types/account";
 
 interface AccountFormDialogProps {
-  account: Account | null;
+  account: AccountDetail | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
@@ -30,8 +25,8 @@ export const AccountFormDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        <VehicleForm
-          vehicle={vehicle}
+        <AccountForm
+          account={account}
           onSubmit={(data) => {
             onSubmit(data);
             onOpenChange(false);

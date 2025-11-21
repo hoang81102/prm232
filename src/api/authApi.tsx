@@ -2,6 +2,8 @@ import axiosClient from "./axiosClient";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import type { AxiosError } from "axios";
+import type { Account } from "../types/account";
+import type { ApiResponseDetail } from "./vehicleApi";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -279,3 +281,50 @@ export const refreshUserInfo = (): UserInfo | null => {
 };
 
 export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
+
+export const getAccounts = async (): Promise<Account[]> => {
+  try {
+    const rawResponse = await axiosClient.get(`/auth/api/admin/users`);
+    const response = rawResponse as ApiResponseDetail<Account[]>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("FETCH ACCOUNTS ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to get accounts!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+export const getAccount = async (accountId: number): Promise<Account> => {
+  try {
+    const rawResponse = await axiosClient.get(
+      `/auth/api/admin/users/${accountId}`
+    );
+    const response = rawResponse as ApiResponseDetail<Account>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("FETCH ACCOUNTS ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to get accounts!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+export const createAccounts = async (): Promise<Account> => {
+  try {
+    const rawResponse = await axiosClient.post(`/auth/api/admin/users`);
+    const response = rawResponse as ApiResponseDetail<Account>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("ADD ACCOUNTS ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to add accounts!";
+    toast.error(msg);
+    throw err;
+  }
+};
