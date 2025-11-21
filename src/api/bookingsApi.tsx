@@ -15,8 +15,8 @@ export interface Booking {
 
 export interface CreateBookingPayload {
   vehicleId: number;
-  startTime: string; // ISO string, ví dụ: "2025-11-20T18:05:30.285Z"
-  endTime: string; // ISO string
+  startTime: string;
+  endTime: string;
 }
 
 interface BaseApiResponse<T> {
@@ -85,6 +85,77 @@ export const getMyBookings = async (): Promise<Booking[]> => {
     const msg =
       (error.response?.data as any)?.message ||
       "Không lấy được lịch sử đặt xe. Vui lòng thử lại!";
+    toast.error(msg);
+
+    return [];
+  }
+};
+
+// =========================
+// ✅ LỊCH XE THEO XE
+// (GET /bookings/api/Bookings/vehicle/{vehicleId}/calendar?from=&to=)
+// =========================
+export const getVehicleCalendar = async (
+  vehicleId: number,
+  params?: { from?: string; to?: string } // ISO date-time
+): Promise<Booking[]> => {
+  try {
+    const res = (await axiosClient.get(
+      `/bookings/api/Bookings/vehicle/${vehicleId}/calendar`,
+      {
+        params: {
+          from: params?.from,
+          to: params?.to,
+        },
+      }
+    )) as BaseApiResponse<Booking[]>;
+
+    console.log("Vehicle calendar response:", res);
+
+    if (!res.success) {
+      toast.error(res.message || "Không lấy được lịch xe!");
+      return [];
+    }
+
+    return res.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("GET VEHICLE CALENDAR ERROR", error.response);
+
+    const msg =
+      (error.response?.data as any)?.message ||
+      "Không lấy được lịch xe. Vui lòng thử lại!";
+    toast.error(msg);
+
+    return [];
+  }
+};
+
+// =========================
+// ✅ LỊCH XE THEO NHÓM
+// (GET /bookings/api/Bookings/group/{groupId})
+// =========================
+export const getGroupBookings = async (groupId: number): Promise<Booking[]> => {
+  try {
+    const res = (await axiosClient.get(
+      `/bookings/api/Bookings/group/${groupId}`
+    )) as BaseApiResponse<Booking[]>;
+
+    console.log("Group bookings response:", res);
+
+    if (!res.success) {
+      toast.error(res.message || "Không lấy được lịch xe theo nhóm!");
+      return [];
+    }
+
+    return res.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("GET GROUP BOOKINGS ERROR", error.response);
+
+    const msg =
+      (error.response?.data as any)?.message ||
+      "Không lấy được lịch xe theo nhóm. Vui lòng thử lại!";
     toast.error(msg);
 
     return [];

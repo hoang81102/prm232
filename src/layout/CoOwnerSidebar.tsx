@@ -43,23 +43,9 @@ const UserSidebar: React.FC = () => {
     },
     {
       id: "schedules",
-      title: "My Schedules",
+      title: "My Booking Schedules",
       icon: "📄",
       path: "/CoOwner/Schedules",
-      hasDropdown: false,
-    },
-    {
-      id: "vote",
-      title: "Vote",
-      icon: "👤",
-      path: "/CoOwner/Vote",
-      hasDropdown: false,
-    },
-    {
-      id: "cost",
-      title: "Cost",
-      icon: "👤",
-      path: "/CoOwner/Cost",
       hasDropdown: false,
     },
     {

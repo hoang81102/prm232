@@ -28,10 +28,15 @@ import ChangePassword from "./page/ChangePassword";
 // 👇 import ProtectedRoute
 import ProtectedRoute from "./Routes/ProtectedRoute";
 import Permission from "./page/Permission";
-import CoOwnerOnboarding from "./components/CoOwner/CoOwnerOnboarding";
+// import CoOwnerOnboarding from "./components/CoOwner/CoOwnerOnboarding";
 import CoOwnerCost from "./components/CoOwner/CoOwnerCost";
 import CoOwnerVote from "./components/CoOwner/CoOwnerVote";
-import CoOwnerGroupPage from "./components/CoOwner/CoOwnerGroupPage";
+import VoteDetail from "./components/CoOwner/VoteDetail";
+import GroupList from "./components/CoOwner/GroupList";
+import GroupDetail from "./components/CoOwner/GroupDetail";
+import CoOwnerDispute from "./components/CoOwner/CoOwnerDispute";
+import CoOwnerPayment from "./components/CoOwner/CoOwnerPayment";
+import CoOwnerContract from "./components/CoOwner/CoOwnerContract";
 
 function App() {
   return (
@@ -73,11 +78,22 @@ function App() {
           }
         >
           <Route path="dashboard" element={<UserDashboard />} />
-          <Route path="grouppage" element={<CoOwnerGroupPage />} />
-          <Route path="grouppage/onboarding" element={<CoOwnerOnboarding />} />
+          <Route path="grouppage" element={<GroupList />} />
+          <Route path="grouppage/:groupId" element={<GroupDetail />} />
+          <Route path="grouppage/:groupId/votes" element={<CoOwnerVote />} />
+          <Route
+            path="grouppage/:groupId/disputes"
+            element={<CoOwnerDispute />}
+          />
+          <Route path="grouppage/:groupId/payments" element={<CoOwnerCost />} />
+          <Route
+            path="grouppage/:groupId/contracts"
+            element={<CoOwnerContract />}
+          />
           <Route path="schedules" element={<WeeklySchedule />} />
           <Route path="cost" element={<CoOwnerCost />} />
           <Route path="vote" element={<CoOwnerVote />} />
+          <Route path="vote/:voteId" element={<VoteDetail />} />
           <Route path="profile" element={<UserProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
