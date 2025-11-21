@@ -35,8 +35,10 @@ import VoteDetail from "./components/CoOwner/VoteDetail";
 import GroupList from "./components/CoOwner/GroupList";
 import GroupDetail from "./components/CoOwner/GroupDetail";
 import CoOwnerDispute from "./components/CoOwner/CoOwnerDispute";
-import CoOwnerPayment from "./components/CoOwner/CoOwnerPayment";
 import CoOwnerContract from "./components/CoOwner/CoOwnerContract";
+import PendingInvoicesPage from "./components/CoOwner/PendingInvoicesPage";
+import InvoiceDetailPage from "./components/CoOwner/InvoiceDetailPage";
+import TransactionHistoryPage from "./components/CoOwner/TransactionHistoryPage";
 
 function App() {
   return (
@@ -96,6 +98,12 @@ function App() {
           <Route path="vote/:voteId" element={<VoteDetail />} />
           <Route path="profile" element={<UserProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path="billing/pending" element={<PendingInvoicesPage />} />
+          <Route
+            path="billing/invoices/:invoiceId"
+            element={<InvoiceDetailPage />}
+          />
+          <Route path="billing/history" element={<TransactionHistoryPage />} />
         </Route>
       </Routes>
 

@@ -1,4 +1,4 @@
-// src/api/disputeApi.ts
+// src/api/disputeApi.tsx
 import axiosClient from "./axiosClient";
 import { toast } from "react-toastify";
 import type { AxiosError } from "axios";
@@ -7,10 +7,10 @@ import type { AxiosError } from "axios";
 // Kiểu response chung từ BE
 // =========================
 interface ApiResponse<T> {
+  success: boolean;
+  errorCode?: string | null;
+  message?: string | null;
   data: T;
-  message?: string;
-  success?: boolean;
-  [key: string]: any;
 }
 
 // =========================
@@ -27,18 +27,22 @@ export interface DisputeMessage {
 
 export interface Dispute {
   disputeId: number;
-  coOwnerGroupId: number;
+
+  coOwnerGroupId?: number;
   title: string;
-  description: string;
+  description?: string;
   relatedBookingId?: number | null;
   status?: string;
   createdAt?: string;
+
+  raisedByUserId?: number;
   createdByUserId?: number;
+
   messages?: DisputeMessage[];
 }
 
 // =========================
-// Payloads
+// Payload tạo khiếu nại
 // =========================
 export interface CreateDisputePayload {
   coOwnerGroupId: number;
@@ -47,99 +51,76 @@ export interface CreateDisputePayload {
   relatedBookingId?: number | null;
 }
 
-export interface SendDisputeMessagePayload {
-  message: string;
-}
+// =========================
+// Helper chung
+// =========================
+const getErrorMessage = (err: unknown, fallback: string): string => {
+  const error = err as AxiosError<any>;
+  return error?.response?.data?.message || fallback;
+};
 
-export interface ResolveDisputePayload {
-  resolutionNote: string;
-}
+// ❗ axiosClient đã trả về response.data
+// nên unwrapResponse nhận trực tiếp ApiResponse<T>
+const unwrapResponse = <T,>(res: ApiResponse<T>): T => {
+  return res.data;
+};
 
 // ======================================================
-// ✅ 1) Tạo khiếu nại — POST /api/Disputes  (CoOwner)
+// ✅ 1) Lấy danh sách khiếu nại theo group
+//     GET /groups/api/Disputes/group/{groupId}
+// ======================================================
+export const getDisputesByGroup = async (
+  groupId: number
+): Promise<Dispute[]> => {
+  try {
+    // 👇 R = ApiResponse<Dispute[]> để TS hiểu đúng kiểu trả về
+    const res = await axiosClient.get<
+      ApiResponse<Dispute[]>,
+      ApiResponse<Dispute[]>
+    >(`/groups/api/Disputes/group/${groupId}`);
+
+    return unwrapResponse(res);
+  } catch (err) {
+    const msg = getErrorMessage(err, "Không tải được danh sách khiếu nại!");
+    toast.error(msg);
+    throw err;
+  }
+};
+
+// ======================================================
+// ✅ 2) Tạo khiếu nại — POST /groups/api/Disputes
 // ======================================================
 export const createDispute = async (
   payload: CreateDisputePayload
 ): Promise<Dispute> => {
   try {
-    const res = (await axiosClient.post(
-      "/api/Disputes",
-      payload
-    )) as ApiResponse<Dispute>;
-
-    const data = res.data ?? (res as any).data;
+    const res = await axiosClient.post<
+      ApiResponse<Dispute>,
+      ApiResponse<Dispute>
+    >("/groups/api/Disputes", payload);
 
     toast.success(res.message || "Đã tạo khiếu nại!");
-    return data;
+    return unwrapResponse(res);
   } catch (err) {
-    const error = err as AxiosError<any>;
-    const msg = error.response?.data?.message || "Tạo khiếu nại thất bại!";
+    const msg = getErrorMessage(err, "Tạo khiếu nại thất bại!");
     toast.error(msg);
     throw err;
   }
 };
 
 // ======================================================
-// ✅ 2) Lấy chi tiết khiếu nại — GET /api/Disputes/{id}
+// ✅ 3) Lấy chi tiết khiếu nại — GET /groups/api/Disputes/{id}
 // ======================================================
 export const getDisputeById = async (id: number): Promise<Dispute> => {
   try {
-    const res = (await axiosClient.get(
-      `/api/Disputes/${id}`
-    )) as ApiResponse<Dispute>;
+    const res = await axiosClient.get<
+      ApiResponse<Dispute>,
+      ApiResponse<Dispute>
+    >(`/groups/api/Disputes/${id}`);
 
-    return res.data ?? (res as any).data;
+    return unwrapResponse(res);
   } catch (err) {
-    const error = err as AxiosError<any>;
-    const msg =
-      error.response?.data?.message || "Không tải được chi tiết khiếu nại!";
-    toast.error(msg);
-    throw err;
-  }
-};
-
-// ======================================================
-// ✅ 3) Staff gửi message — POST /api/Disputes/{id}/message
-// ======================================================
-export const sendDisputeMessage = async (
-  id: number,
-  payload: SendDisputeMessagePayload
-): Promise<Dispute> => {
-  try {
-    const res = (await axiosClient.post(
-      `/api/Disputes/${id}/message`,
-      payload
-    )) as ApiResponse<Dispute>;
-
-    toast.success(res.message || "Đã gửi tin nhắn!");
-    return res.data ?? (res as any).data;
-  } catch (err) {
-    const error = err as AxiosError<any>;
-    const msg = error.response?.data?.message || "Gửi tin nhắn thất bại!";
-    toast.error(msg);
-    throw err;
-  }
-};
-
-// ======================================================
-// ✅ 4) Staff giải quyết tranh chấp — PUT /api/Disputes/{id}/resolve
-// ======================================================
-export const resolveDispute = async (
-  id: number,
-  payload: ResolveDisputePayload
-): Promise<Dispute> => {
-  try {
-    const res = (await axiosClient.put(
-      `/api/Disputes/${id}/resolve`,
-      payload
-    )) as ApiResponse<Dispute>;
-
-    toast.success(res.message || "Đã giải quyết tranh chấp!");
-    return res.data ?? (res as any).data;
-  } catch (err) {
-    const error = err as AxiosError<any>;
-    const msg =
-      error.response?.data?.message || "Giải quyết tranh chấp thất bại!";
+    const msg = getErrorMessage(err, "Không tải được chi tiết khiếu nại!");
     toast.error(msg);
     throw err;
   }

@@ -30,32 +30,40 @@ const UserSidebar: React.FC = () => {
     {
       id: "dashboard",
       title: "Dashboard",
-      icon: "🏠",
+      icon: "📊",
       path: "/CoOwner/dashboard",
       hasDropdown: false,
     },
     {
       id: "GroupPage",
-      title: "Grouppage",
-      icon: "🏠",
+      title: "Group Page",
+      icon: "👥",
       path: "/CoOwner/grouppage",
       hasDropdown: false,
     },
     {
       id: "schedules",
       title: "My Booking Schedules",
-      icon: "📄",
+      icon: "📅",
       path: "/CoOwner/Schedules",
+      hasDropdown: false,
+    },
+    {
+      id: "billing",
+      title: "My Billing",
+      icon: "💳",
+      path: "/CoOwner/billing/pending",
       hasDropdown: false,
     },
     {
       id: "profile",
       title: "Profile",
-      icon: "👤",
+      icon: "🧑",
       path: "/CoOwner/profile",
       hasDropdown: false,
     },
   ];
+
 
   const handleDropdownToggle = (itemId: string) => {
     setActiveDropdown((prev) => (prev === itemId ? null : itemId));
