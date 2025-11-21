@@ -188,7 +188,7 @@ export const registerUser = async (
 // =========================
 export const fetchMe = async (): Promise<any> => {
   try {
-    const res = await axiosClient.get("/auth/api/Auth/me");
+    const res = await axiosClient.get("/auth/api/Profiles/me");
     console.log("ME RESPONSE", res);
     return res;
   } catch (err) {

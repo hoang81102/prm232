@@ -19,6 +19,7 @@ import {
 import { GroupFormDialog } from "../groups/GroupFormDialog";
 import type { Account } from "../../types/account";
 import { getAccounts } from "../../api/authApi";
+import { ContractUploadDialog } from "../groups/contracts/ContractUploadDialog";
 
 const GroupManagement = () => {
   const [groups, setGroups] = useState<GroupSchema[]>([]);
@@ -28,6 +29,7 @@ const GroupManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<GroupSchema | null>(null);
   const [users, setUsers] = useState<Account[]>([]);
+   const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fetchGroup = async () => {
@@ -80,6 +82,10 @@ const GroupManagement = () => {
     setFormDialogOpen(true);
   };
 
+  const handleUploadContract = (group: GroupSchema) => {
+    setSelectedGroup(group);
+    setContractDialogOpen(true);
+  };
   const handleDelete = (group: GroupSchema) => {
     // setGroupToDelete(group);
     setDeleteDialogOpen(true);
@@ -138,6 +144,7 @@ const GroupManagement = () => {
           onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onUploadContract={handleUploadContract}
         />
 
         <GroupFormDialog
@@ -146,6 +153,14 @@ const GroupManagement = () => {
           onOpenChange={setFormDialogOpen}
           onSubmit={handleFormSubmit}
           users={users}
+        />
+        <ContractUploadDialog
+          group={selectedGroup}
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+          onSuccess={() => {
+            fetchGroup();
+          }}
         />
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

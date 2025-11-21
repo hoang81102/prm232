@@ -34,6 +34,8 @@ import CoOwnerGroupPage from "./components/CoOwner/CoOwnerGroupPage";
 import Vehicles from "./page/Vehicles";
 import AccountManagement from "./page/Account";
 import UsersManagement from "./page/Account";
+import VoteManagement from "./components/Admin/VoteManagement";
+import DisputeManagement from "./components/Admin/DisputeManagement";
 
 function App() {
   return (
@@ -63,6 +65,10 @@ function App() {
           <Route path="groups" element={<GroupManagement />} />
           <Route path="vehicles" element={<Vehicles />} />
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="votes" element={<VoteManagement />} />
+          <Route path="disputes" element={<DisputeManagement />} />
+
         </Route>
 
         {/* CoOwner Routes in UserLayout */}

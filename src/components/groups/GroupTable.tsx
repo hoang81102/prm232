@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, Trash2, Search, MoreHorizontal, Pen } from "lucide-react";
+import { Eye, Trash2, Search, MoreHorizontal, Pen, FileUp } from "lucide-react";
 import { Input } from "../ui/input";
 import {
   Table,
@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import type { GroupSchema } from "../../types/group";
@@ -23,6 +24,7 @@ interface GroupTableProps {
   onView: (group: GroupSchema) => void;
   onEdit: (group: GroupSchema) => void;
   onDelete: (group: GroupSchema) => void;
+  onUploadContract: (group: GroupSchema) => void;
 }
 
 export const GroupTable = ({
@@ -30,6 +32,7 @@ export const GroupTable = ({
   onView,
   onEdit,
   onDelete,
+  onUploadContract
 }: GroupTableProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -111,6 +114,23 @@ export const GroupTable = ({
                         >
                           <Pen className="mr-2 h-4 w-4" />
                           Chỉnh sửa
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onUploadContract(group)}
+                          className="hover:bg-emerald-50 cursor-pointer text-blue-600 focus:text-blue-700"
+                        >
+                          <FileUp className="mr-2 h-4 w-4" />
+                          Upload Hợp đồng
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+                        
+                        <DropdownMenuItem
+                          onClick={() => onDelete(group)}
+                          className="text-red-500 hover:bg-red-50 cursor-pointer focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Xóa
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onDelete(group)}
