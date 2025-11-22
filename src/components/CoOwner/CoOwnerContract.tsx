@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  createContract,
   getContractByGroup,
   signContract,
   type Contract,
@@ -132,13 +131,13 @@ const CoOwnerContract: React.FC = () => {
     }
 
     try {
-      setCreating(true);
-      const created = await createContract({
-        coOwnerGroupId: groupId,
-        content: newContent,
-      });
-      setContract(created);
-      setShowCreateForm(false); // NEW: đóng form sau khi tạo xong
+      // setCreating(true);
+      // const created = await createContract({
+      //   coOwnerGroupId: groupId,
+      //   content: newContent,
+      // });
+      // setContract(created);
+      // setShowCreateForm(false); // NEW: đóng form sau khi tạo xong
     } finally {
       setCreating(false);
     }

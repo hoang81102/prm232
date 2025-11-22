@@ -3,7 +3,6 @@ import type { AxiosError } from "axios";
 import axiosClient from "./axiosClient";
 import type { ApiResponseDetail } from "./vehicleApi";
 import { toast } from "react-toastify";
-import type { AxiosError } from "axios";
 
 // =========================
 // Kiểu response chung
@@ -26,6 +25,10 @@ export interface ContractSignature {
 }
 
 export interface GenerateContractPayload {
+  coOwnerGroupId: number;
+  content: string;
+}
+
 export interface Contract {
   contractId: number;
   coOwnerGroupId: number;
@@ -42,33 +45,20 @@ export interface CreateContractPayload {
   content: string;
 }
 
-export const generateContract = async (payload: GenerateContractPayload): Promise<boolean> => {
-// =========================
-// 🟢 TẠO HỢP ĐỒNG (Admin nhóm)
-// POST /groups/api/Contracts/generate
-// =========================
-export const createContract = async (
-  payload: CreateContractPayload
-): Promise<Contract> => {
+export const generateContract = async (
+  payload: GenerateContractPayload
+): Promise<boolean> => {
   try {
-    const res = (await axiosClient.post(
-      "/groups/api/Contracts/generate",
-      payload
-    )) as ApiResponse<Contract>;
-
-    const data = (res.data as Contract) ?? (res as any).data ?? (res as any);
-
-    toast.success(res.message || "Tạo hợp đồng thành công!");
-    return data;
+    await axiosClient.post(`/groups/api/Contracts/generate`, payload);
+    toast.success("Upload hợp đồng thành công!");
+    return true;
   } catch (err) {
     const error = err as AxiosError<any>;
-    console.error("CREATE CONTRACT ERROR", error.response);
-
+    console.error("UPLOAD CONTRACT ERROR", error.response);
     const msg =
-      (error.response?.data as any)?.message || "Tạo hợp đồng thất bại!";
+      (error.response?.data as any)?.message || "Upload hợp đồng thất bại!";
     toast.error(msg);
-
-    throw err;
+    return false;
   }
 };
 
@@ -113,9 +103,6 @@ export const getContractByGroup = async (
 // =========================
 export const signContract = async (contractId: number): Promise<string> => {
   try {
-    await axiosClient.post(`/groups/api/Contracts/generate`, payload);
-    toast.success("Upload hợp đồng thành công!");
-    return true;
     const res = (await axiosClient.post(
       `/groups/api/Contracts/${contractId}/sign`
     )) as ApiResponse<string>;
@@ -127,14 +114,11 @@ export const signContract = async (contractId: number): Promise<string> => {
     return res.data ?? "OK";
   } catch (err) {
     const error = err as AxiosError<any>;
-    console.error("UPLOAD CONTRACT ERROR", error.response);
     console.error("SIGN CONTRACT ERROR", error.response);
 
     const msg =
-      (error.response?.data as any)?.message || "Upload hợp đồng thất bại!";
       (error.response?.data as any)?.message || "Ký hợp đồng thất bại!";
     toast.error(msg);
-    return false;
 
     throw err;
   }

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import type { GroupSchema } from "../../types/group";
-import { createGroup, getGroupById, getGroups } from "../../api/groupApi";
+import { createGroup, getGroups, getGroupsById } from "../../api/groupApi";
 import { Button } from "../ui/button";
 import { GroupTable } from "../groups/GroupTable";
 import {
@@ -29,7 +29,7 @@ const GroupManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<GroupSchema | null>(null);
   const [users, setUsers] = useState<Account[]>([]);
-   const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fetchGroup = async () => {
@@ -48,27 +48,27 @@ const GroupManagement = () => {
     }
   };
 
- const fetchUsers = async () => {
-  try {
-    const res = await getAccounts();
-    console.log("Users fetched:", res);  // ← Thêm log để debug
-    if (res && Array.isArray(res)) {
-      setUsers(res);
+  const fetchUsers = async () => {
+    try {
+      const res = await getAccounts();
+      console.log("Users fetched:", res); // ← Thêm log để debug
+      if (res && Array.isArray(res)) {
+        setUsers(res);
+      }
+    } catch (err) {
+      console.error("Error fetching users:", err); // ← Log error chi tiết
+      toast.error("Không thể tải danh sách user");
     }
-  } catch (err) {
-    console.error("Error fetching users:", err);  // ← Log error chi tiết
-    toast.error("Không thể tải danh sách user");
-  }
-};
+  };
 
   useEffect(() => {
     fetchGroup();
-     fetchUsers();
+    fetchUsers();
   }, []);
 
   const handleView = async (group: GroupSchema) => {
     try {
-      const res = await getGroupById(group.coOwnerGroupId);
+      const res = await getGroupsById(group.coOwnerGroupId);
       if (!res) throw new Error("Failed to load group details");
       setSelectedGroup(res);
       setViewDialogOpen(true);
@@ -105,10 +105,10 @@ const GroupManagement = () => {
     // }
   };
 
- const handleAdd =  () => {
+  const handleAdd = () => {
     setSelectedGroup(null);
     setFormDialogOpen(true);
-};
+  };
 
   const handleFormSubmit = async (data: any) => {
     if (selectedGroup) {

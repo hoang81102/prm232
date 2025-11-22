@@ -98,7 +98,9 @@ export const VehicleForm = ({
             name="licensePlate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>License Plate <span className="text-red-500">*</span> </FormLabel>
+                <FormLabel>
+                  License Plate <span className="text-red-500">*</span>{" "}
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="ABC-1234" {...field} />
                 </FormControl>
@@ -112,7 +114,9 @@ export const VehicleForm = ({
             name="vin"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>VIN <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>
+                  VIN <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="1HGBH41JXMN109186"
@@ -234,10 +238,21 @@ export const VehicleForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent className="bg-white">
-                    <SelectItem className="hover:bg-emerald-300" value="CCS2">CCS2</SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value="NACS">NACS</SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value="CHAdeMO">CHAdeMO</SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value="Type2">Type 2</SelectItem>
+                    <SelectItem className="hover:bg-emerald-300" value="CCS2">
+                      CCS2
+                    </SelectItem>
+                    <SelectItem className="hover:bg-emerald-300" value="NACS">
+                      NACS
+                    </SelectItem>
+                    <SelectItem
+                      className="hover:bg-emerald-300"
+                      value="CHAdeMO"
+                    >
+                      CHAdeMO
+                    </SelectItem>
+                    <SelectItem className="hover:bg-emerald-300" value="Type2">
+                      Type 2
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -284,7 +299,9 @@ export const VehicleForm = ({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>
+                  Status <span className="text-red-500">*</span>
+                </FormLabel>
                 <Select
                   onValueChange={(value) => field.onChange(Number(value))}
                   value={String(field.value)}
@@ -295,13 +312,22 @@ export const VehicleForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent className="bg-white">
-                    <SelectItem className="hover:bg-emerald-300" value={String(VehicleStatus.Active)}>
+                    <SelectItem
+                      className="hover:bg-emerald-300"
+                      value={String(VehicleStatus.Active)}
+                    >
                       Active
                     </SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value={String(VehicleStatus.Inactive)}>
+                    <SelectItem
+                      className="hover:bg-emerald-300"
+                      value={String(VehicleStatus.Inactive)}
+                    >
                       Inactive
                     </SelectItem>
-                    <SelectItem className="hover:bg-emerald-300" value={String(VehicleStatus.Maintenance)}>
+                    <SelectItem
+                      className="hover:bg-emerald-300"
+                      value={String(VehicleStatus.Maintenance)}
+                    >
                       Maintenance
                     </SelectItem>
                   </SelectContent>
@@ -332,7 +358,11 @@ export const VehicleForm = ({
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" className="bg-non hover:bg-slate-300" onClick={onCancel}>
+          <Button
+            type="button"
+            className="bg-non hover:bg-slate-300"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
           <Button type="submit">

@@ -1,10 +1,9 @@
 import type { AxiosError } from "axios";
-import type { CreateVotePayload, VoteSchema } from "../types/votes";
+import type { VoteSchema } from "../types/votes";
 import axiosClient from "./axiosClient";
 import type { ApiResponseDetail } from "./vehicleApi";
 import { toast } from "react-toastify";
 import type { VoteFormValues } from "../components/votes/CreateVoteDialogForm";
-import type { AxiosError } from "axios";
 
 /** ================== COMMON TYPES ================== */
 export interface ApiResponse<T> {
@@ -42,65 +41,79 @@ export interface CreateVoteRequest {
   description: string;
 }
 
-export const createVote = async (voteCreate: VoteFormValues): Promise<VoteSchema> => {
-export interface CastVoteRequest {
-  agree: boolean;
-}
-
-/** ================== API FUNCTIONS ================== */
-
-/**
- * Tạo cuộc bỏ phiếu mới.
- * POST /groups/api/Votes
- */
-export async function createVote(payload: CreateVoteRequest): Promise<Vote> {
+export const createVote = async (
+  voteCreate: VoteFormValues
+): Promise<VoteSchema> => {
   try {
     const rawResponse = await axiosClient.post(
-      `/groups/api/Votes/`, voteCreate
+      `/groups/api/Votes/`,
+      voteCreate
     );
     const response = rawResponse as ApiResponseDetail<VoteSchema>;
     return response.data;
-    const res = (await axiosClient.post(
-      "/groups/api/Votes",
-      payload
-    )) as ApiResponse<Vote>;
-
-    if (!res.success) {
-      const msg = res.message ?? "Tạo bỏ phiếu thất bại!";
-      toast.error(msg);
-      throw new Error(msg);
-    }
-
-    toast.success(res.message ?? "Tạo bỏ phiếu thành công!");
-    return res.data;
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("FETCH ME ERROR", error.response);
     const msg =
       (error.response?.data as any)?.message || "Failed to get profile!";
-      (error.response?.data as any)?.message || "Tạo bỏ phiếu thất bại!";
     toast.error(msg);
     throw err;
   }
 };
-}
 
-export const getVoteByGroupId = async (groupId: number): Promise<VoteSchema[]> => {
+export const getVoteByGroupId = async (
+  groupId: number
+): Promise<VoteSchema[]> => {
+  try {
+    const rawResponse = await axiosClient.get(
+      `/groups/api/Votes/group/${groupId}`
+    );
+    const response = rawResponse as ApiResponseDetail<
+      VoteSchema | VoteSchema[]
+    >;
+
+    if (!response.data) return [];
+
+    // Nếu là mảng → trả thẳng, nếu là object → bọc vào mảng
+    return Array.isArray(response.data) ? response.data : [response.data];
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("FETCH ME ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to get votes!";
+    toast.error(msg);
+    throw err;
+  }
+};
+export const getVoteById = async (voteId: number): Promise<VoteSchema> => {
+  try {
+    const rawResponse = await axiosClient.get(`/groups/api/Votes/${voteId}`);
+    const response = rawResponse as ApiResponseDetail<VoteSchema>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("FETCH ME ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to get votes!";
+    toast.error(msg);
+    throw err;
+  }
+};
 /**
  * Bỏ phiếu cho 1 vote.
  * POST /groups/api/Votes/{voteId}/cast
  * Backend trả về data: "OK"
  */
+export interface CastVoteRequest {
+  agree: boolean;
+}
 export async function castVote(
   voteId: number,
   agree: boolean
 ): Promise<string> {
   try {
-    const rawResponse = await axiosClient.get(`/groups/api/Votes/group/${groupId}`);
-    const response = rawResponse as ApiResponseDetail<VoteSchema | VoteSchema[]>;
     const body: CastVoteRequest = { agree };
 
-    if (!response.data) return [];
     const res = (await axiosClient.post(
       `/groups/api/Votes/${voteId}/cast`,
       body
@@ -114,46 +127,18 @@ export async function castVote(
 
     toast.success(res.message ?? "Bỏ phiếu thành công!");
     return res.data;
-    // Nếu là mảng → trả thẳng, nếu là object → bọc vào mảng
-    return Array.isArray(response.data) ? response.data : [response.data];
   } catch (err) {
     const error = err as AxiosError<any>;
-    console.error("FETCH ME ERROR", error.response);
-    const msg = (error.response?.data as any)?.message || "Failed to get votes!";
     const msg = (error.response?.data as any)?.message || "Bỏ phiếu thất bại!";
     toast.error(msg);
     throw err;
   }
-};
 }
 
 /**
  * Lấy danh sách cuộc bỏ phiếu của group.
  * GET /groups/api/Votes/group/{groupId}
- */
-export async function getVotesByGroup(groupId: number): Promise<Vote[]> {
-  try {
-    const res = (await axiosClient.get(
-      `/groups/api/Votes/group/${groupId}`
-    )) as ApiResponse<Vote[]>;
-
-export const getVoteById = async (voteId: number): Promise<VoteSchema> => {
-    if (!res.success) {
-      const msg = res.message ?? "Không lấy được danh sách bỏ phiếu!";
-      toast.error(msg);
-      return [];
-    }
-
-    return res.data;
-  } catch (err) {
-    const error = err as AxiosError<any>;
-    const msg =
-      (error.response?.data as any)?.message ||
-      "Không lấy được danh sách bỏ phiếu!";
-    toast.error(msg);
-    return [];
-  }
-}
+ *
 
 /**
  * Chi tiết + kết quả của 1 vote.
@@ -161,10 +146,6 @@ export const getVoteById = async (voteId: number): Promise<VoteSchema> => {
  */
 export async function getVoteDetail(voteId: number): Promise<Vote> {
   try {
-    const rawResponse = await axiosClient.get(`/groups/api/Votes/${voteId}`);
-    const response = rawResponse as ApiResponseDetail<VoteSchema>;
-   return response.data;
-  } catch (err) {
     const res = (await axiosClient.get(
       `/groups/api/Votes/${voteId}`
     )) as ApiResponse<Vote>;
@@ -178,13 +159,10 @@ export async function getVoteDetail(voteId: number): Promise<Vote> {
     return res.data;
   } catch (err) {
     const error = err as AxiosError<any>;
-    console.error("FETCH ME ERROR", error.response);
-    const msg = (error.response?.data as any)?.message || "Failed to get votes!";
     const msg =
       (error.response?.data as any)?.message ||
       "Không lấy được chi tiết bỏ phiếu!";
     toast.error(msg);
     throw err;
   }
-};
 }

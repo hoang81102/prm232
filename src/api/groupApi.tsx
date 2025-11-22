@@ -4,7 +4,6 @@ import type { GroupSchema } from "../types/group";
 import axiosClient from "./axiosClient";
 import type { ApiResponseDetail } from "./vehicleApi";
 import { toast } from "react-toastify";
-import type { AxiosError } from "axios";
 
 // =========================
 // Kiểu response chung từ BE
@@ -34,12 +33,6 @@ export interface CoOwnerGroupSummary {
 export interface CoOwnerGroupDetail extends CoOwnerGroupSummary {
   members: CoOwnerGroupMember[];
 }
-import type { GroupFormValues } from "../components/groups/GroupForm";
-
-export const getGroups = async (): Promise<GroupSchema[]> => {
-// =========================
-// Payload tạo nhóm mới
-// =========================
 export interface CreateGroupMemberPayload {
   userId: number;
   sharePercent: number;
@@ -50,57 +43,46 @@ export interface CreateGroupPayload {
   groupName: string;
   initialMembers: CreateGroupMemberPayload[];
 }
+import type { GroupFormValues } from "../components/groups/GroupForm";
+import type { Vote } from "./voteApi";
 
-// =========================
-// API: Tạo nhóm đồng sở hữu mới
-// POST /groups/api/Groups
-// =========================
-export const createGroup = async (
-  payload: CreateGroupPayload
-): Promise<CoOwnerGroupDetail> => {
+export const getGroups = async (): Promise<GroupSchema[]> => {
   try {
-    const rawResponse = await axiosClient.get(
-      `/groups/api/Groups`
-    );
+    const rawResponse = await axiosClient.get(`/groups/api/Groups`);
     const response = rawResponse as ApiResponseDetail<GroupSchema[]>;
     return response.data;
-    const res = (await axiosClient.post(
-      "/groups/api/Groups",
-      payload
-    )) as ApiResponse<CoOwnerGroupDetail>;
-
-    const data =
-      (res.data as CoOwnerGroupDetail) ?? (res as any).data ?? (res as any);
-
-    toast.success(res.message || "Tạo nhóm đồng sở hữu thành công!");
-    return data;
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("FETCH GROUPS ERROR", error.response);
-    console.error("CREATE GROUP ERROR", error.response);
-
     const msg =
       (error.response?.data as any)?.message || "Failed to get groups!";
-      (error.response?.data as any)?.message ||
-      "Tạo nhóm đồng sở hữu thất bại!";
     toast.error(msg);
-
     throw err;
   }
 };
 
-export const getGroupById = async (groupId: number): Promise<GroupSchema> => {
-// =========================
-// API: Danh sách nhóm tôi tham gia
-// GET /groups/api/Groups/my
-// =========================
-export const getMyGroups = async (): Promise<CoOwnerGroupSummary[]> => {
+export const createGroup = async (
+  groupToCreate: GroupFormValues
+): Promise<GroupSchema> => {
   try {
-    const rawResponse = await axiosClient.get(
-      `/groups/api/Groups/${groupId}`
+    const rawResponse = await axiosClient.post(
+      `/groups/api/Groups`,
+      groupToCreate
     );
     const response = rawResponse as ApiResponseDetail<GroupSchema>;
     return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("CREATE GROUP ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to create group!";
+    toast.error(msg);
+    throw err;
+  }
+};
+
+export const getMyGroups = async (): Promise<CoOwnerGroupSummary[]> => {
+  try {
     const res = (await axiosClient.get("/groups/api/Groups/my")) as ApiResponse<
       CoOwnerGroupSummary[]
     >;
@@ -111,11 +93,9 @@ export const getMyGroups = async (): Promise<CoOwnerGroupSummary[]> => {
     return data;
   } catch (err) {
     const error = err as AxiosError<any>;
-    console.error("FETCH GROUP ERROR", error.response);
     console.error("GET MY GROUPS ERROR", error.response);
 
     const msg =
-      (error.response?.data as any)?.message || "Failed to get group!";
       (error.response?.data as any)?.message ||
       "Không tải được danh sách nhóm của bạn.";
     toast.error(msg);
@@ -123,8 +103,6 @@ export const getMyGroups = async (): Promise<CoOwnerGroupSummary[]> => {
     throw err;
   }
 };
-
-export const createGroup = async (groupToCreate : GroupFormValues): Promise<GroupSchema> => {
 // =========================
 // API: Chi tiết một nhóm
 // GET /groups/api/Groups/{groupId}
@@ -133,11 +111,6 @@ export const getGroupById = async (
   groupId: number
 ): Promise<CoOwnerGroupDetail> => {
   try {
-    const rawResponse = await axiosClient.post(
-      `/groups/api/Groups`, groupToCreate
-    );
-    const response = rawResponse as ApiResponseDetail<GroupSchema>;
-    return response.data;
     const res = (await axiosClient.get(
       `/groups/api/Groups/${groupId}`
     )) as ApiResponse<CoOwnerGroupDetail>;
@@ -148,11 +121,9 @@ export const getGroupById = async (
     return data;
   } catch (err) {
     const error = err as AxiosError<any>;
-    console.error("CREATE GROUP ERROR", error.response);
     console.error("GET GROUP DETAIL ERROR", error.response);
 
     const msg =
-      (error.response?.data as any)?.message || "Failed to create group!";
       (error.response?.data as any)?.message ||
       "Không tải được thông tin nhóm.";
     toast.error(msg);
@@ -161,4 +132,42 @@ export const getGroupById = async (
   }
 };
 
+export const getGroupsById = async (groupId: number): Promise<GroupSchema> => {
+  try {
+    const rawResponse = await axiosClient.get(
+      `/groups/api/Groups/${groupId}`
+    );
+    const response = rawResponse as ApiResponseDetail<GroupSchema>;
+    return response.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    console.error("FETCH GROUP ERROR", error.response);
+    const msg =
+      (error.response?.data as any)?.message || "Failed to get group!";
+    toast.error(msg);
+    throw err;
+  }
+};
 
+export async function getVotesByGroup(groupId: number): Promise<Vote[]> {
+  try {
+    const res = (await axiosClient.get(
+      `/groups/api/Votes/group/${groupId}`
+    )) as ApiResponse<Vote[]>;
+
+    if (!res.success) {
+      const msg = res.message ?? "Không lấy được danh sách bỏ phiếu!";
+      toast.error(msg);
+      return [];
+    }
+
+    return res.data;
+  } catch (err) {
+    const error = err as AxiosError<any>;
+    const msg =
+      (error.response?.data as any)?.message ||
+      "Không lấy được danh sách bỏ phiếu!";
+    toast.error(msg);
+    return [];
+  }
+}

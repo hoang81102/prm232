@@ -1,8 +1,8 @@
-// src/components/CoOwner/CoOwnerVote.tsx
 import React, { useEffect, useState, useCallback } from "react";
-import { getVotesByGroup, type Vote } from "../../api/voteApi";
+import { type Vote } from "../../api/voteApi";
 import { getUserInfo } from "../../api/authApi";
 import { useNavigate, useParams } from "react-router-dom";
+import { getVotesByGroup } from "../../api/groupApi";
 
 type UiVoteChoice = "yes" | "no" | null;
 

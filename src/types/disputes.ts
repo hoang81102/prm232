@@ -1,4 +1,4 @@
-export interface Dispute {
+export interface DisputeSchema {
   disputeId: number;
   title: string;
   status: string;

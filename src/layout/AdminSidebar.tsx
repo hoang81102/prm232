@@ -69,20 +69,6 @@ const AdminSideBar: React.FC = () => {
       hasDropdown: false,
     },
     {
-      id: "contracts",
-      title: "Quản lí hợp đồng",
-      icon: <FileText />,
-      path: "/admin/contracts",
-      hasDropdown: false,
-    },
-    {
-      id: "finances",
-      title: "Quản lí tài chính",
-      icon: <FaMoneyBill />,
-      path: "/admin/contracts",
-      hasDropdown: false,
-    },
-    {
       id: "votes",
       title: "Quản lí bình chọn",
       icon: <VoteIcon />,

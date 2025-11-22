@@ -6,24 +6,18 @@ import Login from "./page/Login";
 import HomePage from "./page/HomePage";
 import Register from "./page/Register";
 import ForgotPassword from "./page/forgotPassword";
-
 import ApplicantUploadForm from "./components/ApplicantUploadForm";
-import ApplicationFormManagement from "./components/ApplicationFormManagement";
-
-import UserManagement from "./components/Admin/UserManagement";
 import UserDetails from "./components/Admin/UserDetails";
 import GroupManagement from "./components/Admin/GroupManagement";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 
 import UserLayout from "./layout/CoOwnerLayout";
 import AdminLayout from "./layout/AdminLayout";
-
 import WeeklySchedule from "./components/CoOwner/WeeklySchedule";
 import UserProfile from "./components/CoOwner/CoOwnerProfile";
 import UserDashboard from "./components/CoOwner/CoOwnerDashboard";
 
 import ChangePassword from "./page/ChangePassword";
-
 // 👇 import ProtectedRoute
 import ProtectedRoute from "./Routes/ProtectedRoute";
 import Permission from "./page/Permission";
@@ -38,9 +32,7 @@ import CoOwnerContract from "./components/CoOwner/CoOwnerContract";
 import PendingInvoicesPage from "./components/CoOwner/PendingInvoicesPage";
 import InvoiceDetailPage from "./components/CoOwner/InvoiceDetailPage";
 import TransactionHistoryPage from "./components/CoOwner/TransactionHistoryPage";
-import CoOwnerGroupPage from "./components/CoOwner/CoOwnerGroupPage";
 import Vehicles from "./page/Vehicles";
-import AccountManagement from "./page/Account";
 import UsersManagement from "./page/Account";
 import VoteManagement from "./components/Admin/VoteManagement";
 import DisputeManagement from "./components/Admin/DisputeManagement";
@@ -72,10 +64,8 @@ function App() {
           <Route path="groups" element={<GroupManagement />} />
           <Route path="vehicles" element={<Vehicles />} />
           <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="votes" element={<VoteManagement />} />
           <Route path="disputes" element={<DisputeManagement />} />
-
         </Route>
 
         {/* CoOwner Routes in UserLayout */}

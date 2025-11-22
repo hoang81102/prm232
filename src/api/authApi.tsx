@@ -203,9 +203,7 @@ export const registerUser = async (
     const error = err as AxiosError<any>;
     console.error("REGISTER ERROR", error.response);
 
-    const msg =
-      (error.response?.data as any)?.message ||
-      "Register failed!";
+    const msg = (error.response?.data as any)?.message || "Register failed!";
     toast.error(msg);
 
     return { success: false, message: msg };
@@ -216,10 +214,6 @@ export const registerUser = async (
 // =========================
 export const fetchMe = async (): Promise<UserInfo> => {
   try {
-    const res = (await axiosClient.get(
-      "/auth/api/profiles/me"
-    )) as ApiResponse<any>;
-
     const res = await axiosClient.get("/auth/api/Profiles/me");
     console.log("ME RESPONSE", res);
 
@@ -375,9 +369,14 @@ export const getAccount = async (accountId: number): Promise<Account> => {
   }
 };
 
-export const createAccount = async (accountReggister: AccountFormValues): Promise<Account> => {
+export const createAccount = async (
+  accountReggister: AccountFormValues
+): Promise<Account> => {
   try {
-    const rawResponse = await axiosClient.post(`/auth/api/admin/users`, accountReggister);
+    const rawResponse = await axiosClient.post(
+      `/auth/api/admin/users`,
+      accountReggister
+    );
     const response = rawResponse as ApiResponseDetail<Account>;
     return response.data;
   } catch (err) {
@@ -390,9 +389,15 @@ export const createAccount = async (accountReggister: AccountFormValues): Promis
   }
 };
 
-export const updateAccount = async (userId: number, accountUpdate: Account): Promise<Account> => {
+export const updateAccount = async (
+  userId: number,
+  accountUpdate: Account
+): Promise<Account> => {
   try {
-    const rawResponse = await axiosClient.put(`/auth/api/admin/users/${userId}`, accountUpdate);
+    const rawResponse = await axiosClient.put(
+      `/auth/api/admin/users/${userId}`,
+      accountUpdate
+    );
     const response = rawResponse as ApiResponseDetail<Account>;
     return response.data;
   } catch (err) {
@@ -407,7 +412,9 @@ export const updateAccount = async (userId: number, accountUpdate: Account): Pro
 
 export const deleteAccount = async (userId: number): Promise<Account> => {
   try {
-    const rawResponse = await axiosClient.delete(`/auth/api/admin/users/${userId}`);
+    const rawResponse = await axiosClient.delete(
+      `/auth/api/admin/users/${userId}`
+    );
     const response = rawResponse as ApiResponseDetail<Account>;
     return response.data;
   } catch (err) {

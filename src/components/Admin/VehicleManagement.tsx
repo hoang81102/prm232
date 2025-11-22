@@ -10,21 +10,21 @@ import {
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
 import { Plus } from "lucide-react";
-import { VehicleStatus, type Vehicle } from "../../types/vehicle";
+import { type Vehicle } from "../../types/vehicle";
 import { toast } from "react-toastify";
 import { Button } from "../ui/button";
 import { VehicleTable } from "../vehicle/VehicleTable";
 import { VehicleDetailsDialog } from "../vehicle/VehicleDetail";
 import { VehicleFormDialog } from "../vehicle/VehicleDetailFormDialog";
-import { getVehicles } from "../../api/vehicleApi";
+import { getVehicles, type VehicleSchema } from "../../api/vehicleApi";
 
 const Vehicles = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [vehicles, setVehicles] = useState<VehicleSchema[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleSchema | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<VehicleSchema | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fetchVehicles = async () => {
@@ -47,17 +47,17 @@ const Vehicles = () => {
     fetchVehicles();
   }, []);
 
-  const handleView = (vehicle: Vehicle) => {
+  const handleView = (vehicle: VehicleSchema) => {
     setSelectedVehicle(vehicle);
     setViewDialogOpen(true);
   };
 
-  const handleEdit = (vehicle: Vehicle) => {
+  const handleEdit = (vehicle: VehicleSchema) => {
     setSelectedVehicle(vehicle);
     setFormDialogOpen(true);
   };
 
-  const handleDelete = (vehicle: Vehicle) => {
+  const handleDelete = (vehicle: VehicleSchema) => {
     setVehicleToDelete(vehicle);
     setDeleteDialogOpen(true);
   };
@@ -92,7 +92,7 @@ const Vehicles = () => {
       toast.success(`Vehicle ${data.licensePlate} updated successfully`);
     } else {
       // Add new vehicle
-      const newVehicle: Vehicle = {
+      const newVehicle: VehicleSchema = {
         ...data,
         vehicleId: Math.max(...vehicles.map((v) => v.vehicleId), 0) + 1,
       };
