@@ -24,7 +24,7 @@ type LoginData = {
   accessToken: string;
   refreshToken?: string | null;
   role: string; // co-owner, admin, staff ...
-  [key: string]: any; // userId, phoneNumber,...
+  [key: string]: any; // userId, phoneNumber, coOwnerGroupId,...
 };
 
 type LoginResponse = {
@@ -80,7 +80,6 @@ const mapBackendRoleToFrontend = (role?: string): Role => {
     case "coowner":
       return "CoOwner";
     default:
-      // fallback, tuỳ bạn muốn default là gì
       return "CoOwner";
   }
 };
@@ -126,7 +125,17 @@ export const loginUser = async (
       decoded.role ?? loginData.role
     );
 
+    // ⭐ TÁCH accessToken / refreshToken RA, LẤY PHẦN CÒN LẠI (userId, coOwnerGroupId, email,...)
+    const {
+      accessToken,
+      refreshToken,
+      role: backendRole,
+      ...restLoginData
+    } = loginData as LoginData;
+
+    // ⭐ GỘP restLoginData (từ BE) + decoded (payload token)
     const userInfo: UserInfo = {
+      ...restLoginData, // chứa userId, coOwnerGroupId,... nếu BE trả
       ...decoded,
       role: normalizedRole,
     };
@@ -147,50 +156,86 @@ export const loginUser = async (
 };
 
 // =========================
-// ✅ REGISTER
+// ✅ REGISTER (đã viết lại theo đúng API thật)
 // =========================
 type RegisterResponse = {
+  success: boolean;
+  errorCode?: string | null;
   message?: string;
   data?: any;
-  [key: string]: any;
 };
 
 export const registerUser = async (
   payload: RegisterPayload
 ): Promise<{ success: boolean; data?: any; message?: string }> => {
   try {
-    // Gọi đúng Gateway Endpoint: /auth/api/Auth/register
-    const res = (await axiosClient.post("/auth/api/Auth/register", payload, {
-      skipAuth: true,
-    })) as RegisterResponse;
+    // ⚠️ Map payload FE → đúng body BE yêu cầu
+    const requestBody = {
+      phoneNumber: payload.phoneNumber,
+      password: payload.password,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      email: payload.email,
+      validCitizenIdentification: true, // theo swagger BE yêu cầu
+    };
+
+    const res = (await axiosClient.post(
+      "/auth/api/Auth/register",
+      requestBody,
+      { skipAuth: true }
+    )) as RegisterResponse;
 
     console.log("Register response from server:", res);
 
-    const data = res.data ?? res;
-    const msg = res.message ?? "Register successful!";
+    if (!res.success) {
+      const msg = res.message || "Register failed!";
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
 
-    toast.success(msg);
-    return { success: true, data, message: msg };
+    toast.success(res.message || "Register success!");
+    return {
+      success: true,
+      message: res.message,
+      data: res.data,
+    };
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("REGISTER ERROR", error.response);
 
-    const msg = (error.response?.data as any)?.message || "Register failed!";
+    const msg =
+      (error.response?.data as any)?.message ||
+      "Register failed!";
     toast.error(msg);
 
     return { success: false, message: msg };
   }
 };
-
 // =========================
-// ✅ GET ME
-// (giả định Gateway có endpoint /auth/api/Auth/me)
+// ✅ GET ME (UserProfiles GET /auth/api/profiles/me)
 // =========================
-export const fetchMe = async (): Promise<any> => {
+export const fetchMe = async (): Promise<UserInfo> => {
   try {
+    const res = (await axiosClient.get(
+      "/auth/api/profiles/me"
+    )) as ApiResponse<any>;
+
     const res = await axiosClient.get("/auth/api/Profiles/me");
     console.log("ME RESPONSE", res);
-    return res;
+
+    // backend trả { success, errorCode, message, data: {...} }
+    const rawProfile = res.data ?? (res as any).data ?? (res as any);
+
+    const normalizedRole = mapBackendRoleToFrontend(rawProfile.role);
+    const userInfo: UserInfo = {
+      ...rawProfile,
+      role: normalizedRole,
+    };
+
+    // lưu lại userInfo mới nhất
+    localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+
+    return userInfo;
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("FETCH ME ERROR", error.response);
@@ -202,22 +247,29 @@ export const fetchMe = async (): Promise<any> => {
 };
 
 // =========================
-// ✅ UPDATE ME
+// ✅ UPDATE ME (UserProfiles PUT /auth/api/profiles/me)
 // =========================
 export const updateProfile = async (
   payload: UpdateProfilePayload
-): Promise<any> => {
+): Promise<UserInfo> => {
   try {
-    const rawResponse = await axiosClient.patch("/auth/api/Auth/me", payload);
+    const rawResponse = await axiosClient.put("/auth/api/profiles/me", payload);
     const response = rawResponse as ApiResponse<any>;
 
-    toast.success("Profile updated successfully!");
+    const rawProfile =
+      response.data ?? (response as any).data ?? (response as any);
 
-    if (response.data) {
-      localStorage.setItem(USER_INFO_KEY, JSON.stringify(response.data));
-    }
+    const normalizedRole = mapBackendRoleToFrontend(rawProfile.role);
+    const userInfo: UserInfo = {
+      ...rawProfile,
+      role: normalizedRole,
+    };
 
-    return response.data;
+    toast.success(response.message || "Profile updated successfully!");
+
+    localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+
+    return userInfo;
   } catch (err) {
     const error = err as AxiosError<any>;
     console.error("UPDATE PROFILE ERROR", error.response);
@@ -230,7 +282,6 @@ export const updateProfile = async (
 
 // =========================
 // ✅ LOGOUT
-// (giả định Gateway có endpoint /auth/api/Auth/logout)
 // =========================
 export const logout = async (refreshToken?: string): Promise<void> => {
   try {
@@ -269,7 +320,16 @@ export const refreshUserInfo = (): UserInfo | null => {
     try {
       const decoded = jwtDecode<DecodedToken>(token);
       const normalizedRole = mapBackendRoleToFrontend(decoded.role);
-      const userInfo: UserInfo = { ...decoded, role: normalizedRole };
+
+      // ⭐ giữ lại info cũ (userId,...), chỉ cập nhật lại claim từ token
+      const rawExisting = localStorage.getItem(USER_INFO_KEY);
+      const existing = rawExisting ? (JSON.parse(rawExisting) as any) : {};
+
+      const userInfo: UserInfo = {
+        ...existing,
+        ...decoded,
+        role: normalizedRole,
+      };
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
       return userInfo;
     } catch (error) {

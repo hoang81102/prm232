@@ -1,430 +1,328 @@
-import React, { useState } from "react";
+// src/components/CoOwner/CoOwnerCost.tsx
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { getUserInfo } from "../../api/authApi";
+import {
+  getGroupFund,
+  getGroupFundHistory,
+  depositToFund,
+  type GroupFund,
+  type FundHistoryEntry,
+} from "../../api/financeApi";
 
-type SplitMethod = "ownership" | "usage" | "equal";
-type CostStatus = "paid" | "pending";
-
-interface Cost {
-  id: number;
-  type: string;
-  amount: number;
-  date: string;
-  createdBy: string;
-  splitMethod: SplitMethod;
-  yourShare: number;
-  status: CostStatus;
-}
-
-interface NewCostState {
-  type: string;
+interface DepositFormState {
   amount: string;
-  date: string;
-  description: string;
-  splitMethod: SplitMethod;
+  reason: string;
 }
 
-// Mock data - Chi phí
-const costs: Cost[] = [
-  {
-    id: 1,
-    type: "Sạc điện",
-    amount: 150_000,
-    date: "2025-11-05",
-    createdBy: "Nguyễn Văn A",
-    splitMethod: "usage",
-    yourShare: 30_000,
-    status: "paid",
-  },
-  {
-    id: 2,
-    type: "Bảo dưỡng định kỳ",
-    amount: 800_000,
-    date: "2025-11-03",
-    createdBy: "Bạn",
-    splitMethod: "ownership",
-    yourShare: 160_000,
-    status: "paid",
-  },
-  {
-    id: 3,
-    type: "Phí đỗ xe",
-    amount: 50_000,
-    date: "2025-11-01",
-    createdBy: "Trần Thị B",
-    splitMethod: "equal",
-    yourShare: 10_000,
-    status: "pending",
-  },
-  {
-    id: 4,
-    type: "Bảo hiểm",
-    amount: 5_000_000,
-    date: "2025-10-28",
-    createdBy: "Admin",
-    splitMethod: "ownership",
-    yourShare: 1_000_000,
-    status: "paid",
-  },
-];
+interface CoOwnerCostProps {
+  groupId?: number;
+}
 
-const costTypes: string[] = [
-  "Sạc điện",
-  "Bảo dưỡng",
-  "Sửa chữa",
-  "Bảo hiểm",
-  "Phí đỗ xe",
-  "Phí đường bộ",
-  "Rửa xe",
-  "Khác",
-];
+const CoOwnerCost: React.FC<CoOwnerCostProps> = ({ groupId }) => {
+  const params = useParams<{ groupId?: string }>();
+  const userInfo = getUserInfo() as any | null;
 
-const CoOwnerCost: React.FC = () => {
-  const [showNewCost, setShowNewCost] = useState<boolean>(false);
-  const [newCost, setNewCost] = useState<NewCostState>({
-    type: "",
+  // Xác định groupId đang dùng
+  const routeGroupId =
+    params.groupId && !Number.isNaN(Number(params.groupId))
+      ? Number(params.groupId)
+      : undefined;
+
+  const _groupId: number =
+    groupId ??
+    (routeGroupId as number | undefined) ??
+    (userInfo?.coOwnerGroupId as number | undefined) ??
+    1;
+
+  // ====== STATE QUỸ ======
+  const [fund, setFund] = useState<GroupFund | null>(null);
+  const [fundHistory, setFundHistory] = useState<FundHistoryEntry[]>([]);
+  const [loadingFund, setLoadingFund] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // ====== STATE NẠP QUỸ ======
+  const [depositForm, setDepositForm] = useState<DepositFormState>({
     amount: "",
-    date: "",
-    description: "",
-    splitMethod: "ownership",
+    reason: "",
   });
+  const [depositing, setDepositing] = useState(false);
 
-  const handleCreateCost = (): void => {
-    console.log("Tạo chi phí mới:", newCost);
-    alert("Đã ghi nhận chi phí! (Mock data - không lưu thực tế)");
-    setShowNewCost(false);
-    setNewCost({
-      type: "",
-      amount: "",
-      date: "",
-      description: "",
-      splitMethod: "ownership",
-    });
-  };
-
-  const totalPaid = costs
-    .filter((c) => c.status === "paid")
-    .reduce((sum, c) => sum + c.yourShare, 0);
-
-  const totalPending = costs
-    .filter((c) => c.status === "pending")
-    .reduce((sum, c) => sum + c.yourShare, 0);
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("vi-VN", {
+  // =========================
+  // Helpers
+  // =========================
+  const formatCurrency = (amount: number): string =>
+    new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(amount);
+
+  const formatDateTime = (value: string) => {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleString("vi-VN");
   };
 
-  const getSplitMethodLabel = (method: SplitMethod): string => {
-    switch (method) {
-      case "ownership":
-        return "Theo tỷ lệ sở hữu";
-      case "usage":
-        return "Theo mức sử dụng";
-      case "equal":
-        return "Chia đều";
-      default:
-        return method;
+  // Tính toán tổng theo history
+  const totalDeposited = fundHistory.reduce(
+    (sum, h) => (h.changeAmount > 0 ? sum + h.changeAmount : sum),
+    0
+  );
+  const totalSpent = fundHistory.reduce(
+    (sum, h) => (h.changeAmount < 0 ? sum + Math.abs(h.changeAmount) : sum),
+    0
+  );
+  const currentBalance = fund?.amount ?? 0;
+
+  // =========================
+  // CALL API: FUND + HISTORY
+  // =========================
+  const fetchFund = async () => {
+    try {
+      setLoadingFund(true);
+      const data = await getGroupFund(_groupId);
+      setFund(data);
+    } catch {
+      // lỗi đã toast trong api
+    } finally {
+      setLoadingFund(false);
     }
   };
 
+  const fetchFundHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const data = await getGroupFundHistory(_groupId);
+      setFundHistory(data);
+    } catch {
+      // lỗi đã toast trong api
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFund();
+    fetchFundHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_groupId]);
+
+  // =========================
+  // HANDLE: NẠP QUỸ
+  // POST /finance/api/Funds/deposit
+  // =========================
+  const handleDeposit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const amountNum = Number(depositForm.amount);
+    if (!amountNum || amountNum <= 0) {
+      alert("Số tiền nạp phải lớn hơn 0");
+      return;
+    }
+
+    try {
+      setDepositing(true);
+      await depositToFund({
+        coOwnerGroupId: _groupId,
+        amount: amountNum,
+        reason: depositForm.reason.trim() || "Nạp quỹ",
+      });
+
+      // reload quỹ + history
+      await Promise.all([fetchFund(), fetchFundHistory()]);
+
+      setDepositForm({ amount: "", reason: "" });
+    } catch {
+      // đã toast trong api
+    } finally {
+      setDepositing(false);
+    }
+  };
+
+  // =========================
+  // RENDER
+  // =========================
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Quản lý Chi phí</h1>
+          <h1 className="mb-2 text-3xl font-bold">Quỹ &amp; Chi phí chung</h1>
           <p className="text-sm text-gray-500">
-            Ghi nhận và chia sẻ chi phí vận hành xe
+            Xem số dư quỹ, lịch sử giao dịch và ghi nhận chi phí chung cho nhóm.
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Đang thao tác cho <b>nhóm ID: {_groupId}</b>.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowNewCost((prev) => !prev)}
-          className="inline-flex items-center rounded-md bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          <span className="mr-2 text-lg">＋</span>
-          Thêm chi phí
-        </button>
       </div>
 
-      {/* Tổng quan chi phí */}
+      {/* Tổng quan quỹ */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Đã thanh toán */}
+        {/* Số dư hiện tại */}
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-            <span className="text-lg">👛</span>
-            <span>Đã thanh toán</span>
+            <span className="text-lg">🏦</span>
+            <span>Số dư quỹ hiện tại</span>
           </div>
           <p className="text-2xl font-bold text-emerald-600">
-            {formatCurrency(totalPaid)}
+            {loadingFund ? "Đang tải..." : formatCurrency(currentBalance)}
           </p>
-          <p className="mt-1 text-xs text-gray-500">Tháng này</p>
+          <p className="mt-1 text-xs text-gray-500">Cập nhật theo hệ thống</p>
         </div>
 
-        {/* Chờ thanh toán */}
+        {/* Tổng nạp */}
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-            <span className="text-lg">🧾</span>
-            <span>Chờ thanh toán</span>
+            <span className="text-lg">💰</span>
+            <span>Tổng nạp vào quỹ</span>
           </div>
-          <p className="text-2xl font-bold text-amber-500">
-            {formatCurrency(totalPending)}
+          <p className="text-2xl font-bold text-blue-600">
+            {formatCurrency(totalDeposited)}
           </p>
-          <p className="mt-1 text-xs text-gray-500">Cần xử lý</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Tính trên toàn bộ lịch sử
+          </p>
         </div>
 
-        {/* Tổng chi phí */}
+        {/* Tổng chi */}
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-            <span className="text-lg">📈</span>
-            <span>Tổng chi phí</span>
+            <span className="text-lg">📉</span>
+            <span>Tổng chi từ quỹ</span>
           </div>
-          <p className="text-2xl font-bold">
-            {formatCurrency(totalPaid + totalPending)}
+          <p className="text-2xl font-bold text-rose-600">
+            {formatCurrency(totalSpent)}
           </p>
-          <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-            <span className="text-emerald-500">📉</span>
-            <span>-12% so với tháng trước</span>
+          <p className="mt-1 text-xs text-gray-500">
+            Bao gồm các khoản chi chung được ghi nhận
           </p>
         </div>
       </div>
 
-      {/* Form thêm chi phí */}
-      {showNewCost && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold">Ghi nhận chi phí mới</h2>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Loại chi phí */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">
-                Loại chi phí *
-              </label>
-              <select
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                value={newCost.type}
-                onChange={(e) =>
-                  setNewCost((prev) => ({ ...prev, type: e.target.value }))
-                }
-              >
-                <option value="">Chọn loại chi phí</option>
-                {costTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Số tiền */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="amount"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Số tiền (VNĐ) *
-              </label>
-              <input
-                id="amount"
-                type="number"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                value={newCost.amount}
-                onChange={(e) =>
-                  setNewCost((prev) => ({ ...prev, amount: e.target.value }))
-                }
-                placeholder="150000"
-              />
-            </div>
-
-            {/* Ngày phát sinh */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="date"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Ngày phát sinh *
-              </label>
-              <input
-                id="date"
-                type="date"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                value={newCost.date}
-                onChange={(e) =>
-                  setNewCost((prev) => ({ ...prev, date: e.target.value }))
-                }
-              />
-            </div>
-
-            {/* Phương thức chia */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">
-                Phương thức chia *
-              </label>
-              <select
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                value={newCost.splitMethod}
-                onChange={(e) =>
-                  setNewCost((prev) => ({
-                    ...prev,
-                    splitMethod: e.target.value as SplitMethod,
-                  }))
-                }
-              >
-                <option value="ownership">Theo tỷ lệ sở hữu</option>
-                <option value="usage">Theo mức sử dụng</option>
-                <option value="equal">Chia đều</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Mô tả */}
-          <div className="mt-4 space-y-1.5">
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Mô tả
+      {/* Form nạp quỹ */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-semibold">Nạp tiền vào quỹ nhóm</h2>
+        <form
+          className="grid grid-cols-1 gap-4 md:grid-cols-3"
+          onSubmit={handleDeposit}
+        >
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">
+              Số tiền nạp (VNĐ) *
             </label>
-            <textarea
-              id="description"
+            <input
+              type="number"
+              min={0}
               className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              value={newCost.description}
+              value={depositForm.amount}
               onChange={(e) =>
-                setNewCost((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
+                setDepositForm((prev) => ({ ...prev, amount: e.target.value }))
               }
-              placeholder="Ghi chú về chi phí này..."
-              rows={3}
+              placeholder="100000"
             />
           </div>
-
-          {/* Upload hoá đơn */}
-          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="mb-2 text-sm text-gray-600">
-              📎 Đính kèm hóa đơn/chứng từ
-            </p>
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Lý do nạp
+            </label>
+            <input
+              type="text"
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              value={depositForm.reason}
+              onChange={(e) =>
+                setDepositForm((prev) => ({ ...prev, reason: e.target.value }))
+              }
+              placeholder="Nạp quỹ lần đầu, nạp bổ sung..."
+            />
+          </div>
+          <div className="md:col-span-3 flex justify-end">
             <button
-              type="button"
-              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              type="submit"
+              disabled={depositing}
+              className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-60"
             >
-              <span className="mr-2 text-base">⬆️</span>
-              Tải file lên
+              {depositing ? "Đang nạp..." : "Nạp quỹ"}
             </button>
           </div>
-
-          {/* Actions */}
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={handleCreateCost}
-              className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Ghi nhận
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowNewCost(false)}
-              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Hủy
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Bảng chi phí */}
+        </form>
+      </div>
+      {/* Lịch sử giao dịch quỹ */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <span className="text-xl">💵</span>
-            <span>Lịch sử chi phí</span>
+            <span className="text-xl">📜</span>
+            <span>Lịch sử giao dịch quỹ</span>
           </h2>
         </div>
         <div className="overflow-x-auto px-6 py-4">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Loại
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Số tiền
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Ngày
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Người tạo
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Phương thức chia
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Phần của bạn
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Trạng thái
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {costs.map((cost) => (
-                <tr key={cost.id}>
-                  <td className="whitespace-nowrap px-3 py-2 font-medium text-gray-900">
-                    {cost.type}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-gray-700">
-                    {formatCurrency(cost.amount)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-gray-700">
-                    {cost.date}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-gray-700">
-                    {cost.createdBy}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-600">
-                    {getSplitMethodLabel(cost.splitMethod)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 font-semibold text-gray-900">
-                    {formatCurrency(cost.yourShare)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    {cost.status === "paid" ? (
-                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        ● Đã thanh toán
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                        ● Chờ thanh toán
-                      </span>
-                    )}
-                  </td>
+          {loadingHistory ? (
+            <p className="text-sm text-gray-500">Đang tải lịch sử...</p>
+          ) : fundHistory.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              Chưa có giao dịch nào cho quỹ của nhóm này.
+            </p>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Thời gian
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Số tiền thay đổi
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Loại
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Lý do
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Người thực hiện
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {totalPending > 0 && (
-            <div className="mt-4 flex items-center justify-between rounded-lg bg-amber-50 p-4">
-              <div>
-                <p className="font-semibold text-amber-800">
-                  Bạn cần thanh toán: {formatCurrency(totalPending)}
-                </p>
-                <p className="text-sm text-amber-700">
-                  Vui lòng thanh toán để duy trì hoạt động nhóm
-                </p>
-              </div>
-              <button
-                type="button"
-                className="inline-flex items-center rounded-md bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                <span className="mr-2 text-base">💳</span>
-                Thanh toán ngay
-              </button>
-            </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {fundHistory.map((h, idx) => {
+                  const isDeposit = h.changeAmount >= 0;
+                  return (
+                    <tr key={`${h.createdAt}-${idx}`}>
+                      <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                        {formatDateTime(h.createdAt)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 font-semibold">
+                        <span
+                          className={
+                            isDeposit ? "text-emerald-600" : "text-rose-600"
+                          }
+                        >
+                          {isDeposit ? "+" : "-"}
+                          {formatCurrency(Math.abs(h.changeAmount))}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs">
+                        {isDeposit ? (
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
+                            Nạp quỹ
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-rose-700">
+                            Chi từ quỹ
+                          </span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                        {h.reason}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                        User #{h.changedByUserId}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       </div>

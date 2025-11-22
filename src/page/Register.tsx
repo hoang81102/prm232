@@ -5,17 +5,13 @@ import { registerUser } from "../api/authApi";
 const Register: React.FC = () => {
   const navigate = useNavigate();
 
-  // State quản lý form (đúng theo payload backend)
   const [firstName, setFirstName] = useState<string>("");
-  const [lastName, setLastName] = useState<string>(""); // tên
+  const [lastName, setLastName] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [gender, setGender] = useState<string>("Male");
-  const [dateOfBirth, setDateOfBirth] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
-
   const [password, setPassword] = useState<string>("");
   const [passwordConfirm, setPasswordConfirm] = useState<string>("");
+
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -24,15 +20,13 @@ const Register: React.FC = () => {
   ): Promise<void> => {
     event.preventDefault();
 
-    // ✅ Kiểm tra dữ liệu cơ bản (theo schema backend)
     if (
       !firstName ||
       !lastName ||
       !phoneNumber ||
       !email ||
       !password ||
-      !passwordConfirm ||
-      !dateOfBirth // ⬅️ thêm ngày sinh để khớp schema
+      !passwordConfirm
     ) {
       alert("Vui lòng nhập đầy đủ các thông tin bắt buộc!");
       return;
@@ -43,6 +37,7 @@ const Register: React.FC = () => {
       return;
     }
 
+    // Payload khớp với API registerUser mới (hàm đó sẽ map sang body BE)
     const payload = {
       phoneNumber,
       password,
@@ -50,14 +45,11 @@ const Register: React.FC = () => {
       email,
       firstName,
       lastName,
-      gender,
-      dateOfBirth, // input type="date" sẽ gửi format yyyy-MM-dd
-      address,
     };
 
     try {
       setLoading(true);
-      const result = await registerUser(payload);
+      const result = await registerUser(payload as any); // nếu đã sửa RegisterPayload thì bỏ "as any"
 
       if (result.success) {
         alert("Đăng ký thành công! Vui lòng đăng nhập.");
@@ -148,50 +140,6 @@ const Register: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
               required
-            />
-          </div>
-
-          {/* Giới tính + Ngày sinh */}
-          <div className="mb-5 grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-                Giới tính
-              </label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
-              >
-                <option value="Male">Nam</option>
-                <option value="Female">Nữ</option>
-                <option value="Other">Khác</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-                Ngày sinh <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Địa chỉ */}
-          <div className="mb-5">
-            <label className="block text-[#2C5364] text-sm font-semibold mb-2">
-              Địa chỉ
-            </label>
-            <input
-              type="text"
-              placeholder="Nhập địa chỉ"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full p-3 border-2 border-gray-200 rounded-xl text-base outline-none transition-colors duration-300 focus:border-[#2C5364]"
             />
           </div>
 
